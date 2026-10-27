@@ -3,7 +3,7 @@
 Site estático (HTML, CSS e JavaScript puros, sem build, sem CDN, funciona offline). Todos os dados são fictícios.
 
 ## Estado
-Entregues: métodos 1 (Indicadores), 2 (Joinpoint), 3 (AEDE) e 4 (I de Moran global). Os demais aparecem no menu como "em breve".
+Entregues os 8 métodos: 1 Indicadores, 2 Joinpoint, 3 AEDE, 4 I de Moran global, 5 Moran local (LISA), 6 Varredura de Kulldorff (SaTScan), 7 VIF, OLS e GWR, 8 Como se encaixam (cadeia do projeto, reaproveita os números fictícios dos demais).
 
 ## Publicar no GitHub Pages
 1. Crie um repositório no GitHub e envie o conteúdo desta pasta na raiz (index.html, css, js, fonts, assets, .nojekyll).
@@ -18,6 +18,7 @@ Salve os arquivos em assets/ com os nomes exatos `ufal.png` e `ppgcs.png`. O sim
 
 ## Testes
 - Conferência numérica independente (Python): `node tests/dump_js.js > js.json && python3 tests/check_joinpoint.py js.json` (requer numpy e scipy).
+- Conferências Python de cada método: gere o dump com `node tests/dump_<metodo>.js > x.json` e rode `python3 tests/check_<metodo>.py x.json` (aede, moran, lisa, satscan, gwr, indicadores, joinpoint). O método 8: `python3 tests/check_encaixe.py` (gera e compara sozinho os dumps).
 - Interface (Playwright): `node tests/ui_smoke.js pasta-de-capturas` (celular 360 e 390 px, tablet 768 px, desktop 1280 px).
 
 ## Fontes e licenças

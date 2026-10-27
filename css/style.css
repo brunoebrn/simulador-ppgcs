@@ -263,3 +263,22 @@ svg .bar-warn { fill: var(--c2); stroke: var(--bg); stroke-width: 2; }
 .legend .swref { background: transparent; border: 2px dashed var(--muted); }
 .legend .swc3 { background: var(--c3); }
 .opts .grp { flex-wrap: wrap; max-width: 100%; }
+
+/* Método 8: cadeia e peças de valores-chave */
+.chain-box { margin: 0 0 10px; }
+.chain { width: 100%; height: auto; display: block; }
+.chain .link { stroke: var(--muted); stroke-width: 2; }
+.chain .bx { cursor: pointer; outline: none; }
+.chain .bx rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+.chain .bx.on rect { fill: var(--panel2); stroke: var(--accent); stroke-width: 3; }
+.chain .bx:hover rect { stroke: var(--accent); }
+.chain .bx:focus-visible rect { stroke: var(--focus); stroke-width: 3.5; }
+.chain .badge { fill: var(--accent); }
+.chain .badge-t { fill: var(--accent-ink); }
+.chain text { fill: var(--text); }
+.chain text.muted { fill: var(--muted); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 4px 6px; }
+.tile { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--panel); display: flex; flex-direction: column; min-width: 0; }
+.tile .tl { font-size: .8rem; color: var(--muted); }
+.tile .tv { font-family: var(--f-head); font-weight: 700; font-size: 1.35rem; color: var(--accent); overflow-wrap: anywhere; }
+.tile .ts { font-size: .8rem; color: var(--muted); }

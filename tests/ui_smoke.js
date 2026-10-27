@@ -173,14 +173,33 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
     await page.click(".opts button:text-is('5 explicativas')"); await page.waitForTimeout(500);
     if (!/IVS/.test(await page.textContent(".opts"))) { console.log(name, "gwr passo 7: modelo de 5 explicativas sem IVS"); bad++; }
     await page.screenshot({ path: `${out}/${name}-gwr-5vars.png`, fullPage: false });
+    const want8 = [/6 de 10/, /Maior queda/, /0,4221/, /27 de 102/, /35 munic/, /0,807/];
+    for (let s8 = 1; s8 <= 6; s8++) {
+      await page.goto(url + "#encaixe/" + s8); await page.waitForSelector(".stage [data-ready]", { timeout: 20000 });
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "encaixe passo", s8, "rolagem horizontal de", ov, "px"); bad++; }
+      const ctl = await page.evaluate(() => !!document.querySelector(".stage .mini")); if (ctl) { console.log(name, "encaixe passo", s8, "controles de animação indevidos"); bad++; }
+      const t = await page.textContent(".stage"); if (!want8[s8 - 1].test(t)) { console.log(name, "encaixe passo", s8, "faltou valor-chave:", t.slice(0, 120)); bad++; }
+      const nb = await page.evaluate(() => document.querySelectorAll("svg.chain g.bx").length), on = await page.evaluate(() => [...document.querySelectorAll("svg.chain g.bx")].findIndex(g => g.classList.contains("on")));
+      if (nb !== 6 || on !== s8 - 1) { console.log(name, "encaixe passo", s8, "diagrama com", nb, "caixas, destaque em", on); bad++; }
+      await page.waitForFunction(() => !/calculando/.test(document.querySelector("[data-live=conta]").textContent), null, { timeout: 20000 });
+      if (s8 === 1 || s8 === 4 || s8 === 6) await page.screenshot({ path: `${out}/${name}-encaixe-passo${s8}.png`, fullPage: s8 === 1 });
+    }
+    await page.goto(url + "#encaixe/3"); await page.waitForTimeout(300);
+    await page.click("svg.chain g.bx:nth-of-type(6)"); await page.waitForTimeout(500);
+    if (!/VIF, OLS e GWR/.test(await page.textContent("h1, h2, #view"))) { console.log(name, "encaixe: clique na caixa 6 não abriu o método"); bad++; }
+    if (!(await page.evaluate(() => /gwr\/1$/.test(location.hash)))) { console.log(name, "encaixe: hash não foi para gwr/1"); bad++; }
+    await page.goto(url + "#encaixe/2"); await page.waitForTimeout(300);
+    await page.click(".opts button:text-is('4. I de Moran global')"); await page.waitForTimeout(500);
+    if (!(await page.evaluate(() => /moran\/1$/.test(location.hash)))) { console.log(name, "encaixe: chip do método 4 não navegou"); bad++; }
     await page.goto(url + "#aede/3"); await page.waitForTimeout(400); await page.evaluate(() => document.querySelectorAll("svg.map path.clk")[10].dispatchEvent(new MouseEvent("click", { bubbles: true }))); await page.waitForTimeout(200);
     if (!(await page.textContent("[aria-live=polite]")).match(/vizinhos/)) { console.log(name, "aede: clique no município não atualizou"); bad++; }
-    for (const m of ["joinpoint", "indicadores", "aede", "moran", "lisa", "satscan", "gwr"]) {
+    for (const m of ["joinpoint", "indicadores", "aede", "moran", "lisa", "satscan", "gwr", "encaixe"]) {
       await page.goto(url + "#" + m + "/1"); await page.waitForTimeout(300);
       await page.evaluate(() => document.querySelectorAll("details.more").forEach(d => { d.open = true; })); await page.waitForTimeout(300);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) { console.log(name, m, "seções abertas: rolagem horizontal de", ov, "px"); bad++; }
-      if (m === "joinpoint" || m === "aede" || m === "moran" || m === "lisa" || m === "satscan" || m === "gwr") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
+      if (m === "joinpoint" || m === "aede" || m === "moran" || m === "lisa" || m === "satscan" || m === "gwr" || m === "encaixe") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
     }
     const real = errs.filter(e => !/ERR_FILE_NOT_FOUND/.test(e)); errs.length = 0; errs.push(...real);
     if (errs.length) { console.log(name, "erros:", errs); bad++; }

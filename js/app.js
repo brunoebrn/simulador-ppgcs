@@ -1,4 +1,4 @@
-/* Casca do aplicativo: navegação por hash (#metodo/passo ou #metodo/aba), temas, modo banca, controle de velocidade. */
+/* Casca do aplicativo: navegação por hash (#metodo/passo), temas, versão técnica, controle de velocidade. */
 (function () {
   "use strict";
   var NS = window.PPGCS, clock = NS.clock, M = NS.methods;
@@ -18,7 +18,8 @@
 
   var app = {
     tech: function () { return flags.tech; }, remount: function () { attachMini(); },
-    go: function (state, n) { nav(state.id + "/" + n); }
+    go: function (state, n) { nav(state.id + "/" + n); },
+    open: function (id) { if (M[id] && M[id].ready) nav(id + "/1"); }
   };
 
   /* Rota guardada em memória; o hash é só um espelho (alguns ambientes embutidos não repassam hash com barra). */
@@ -42,7 +43,7 @@
   }
   function home() {
     tabsEl.hidden = true; clock.clear();
-    view.innerHTML = "<h2>Escolha um método</h2><p>Cada método é explicado em passos curtos, com animação, conta na tela e uma fala pronta para a banca. Todos os números são de exemplos fictícios.</p><div class=cards></div>";
+    view.innerHTML = "<h2>Escolha um método</h2><p>Cada método é explicado em passos curtos, com animação (quando ajuda), conta na tela e versão técnica opcional. Todos os números são de exemplos fictícios.</p><div class=cards></div>";
     var box = view.querySelector(".cards"); box.style.cssText = "display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))";
     LIST.forEach(function (m) {
       var ready = M[m.id] && M[m.id].ready, b = document.createElement("button");
