@@ -329,5 +329,103 @@
     return { M: M, seed: seed, R: R, p: (R + 1) / (M + 1), sims: sims, obs: obs };
   };
 
+  /* ---------- VIF, OLS e GWR (método 7) ---------- */
+  /* Solver próprio: elimina Gauss-Jordan com pivô parcial. inv(A) devolve a inversa; solve(A, b) devolve x com A x = b. A é lista de linhas. */
+  S.inv = function (A) {
+    var n = A.length, M = A.map(function (r, i) { var q = r.slice(); for (var j = 0; j < n; j++) q.push(i === j ? 1 : 0); return q; }), i, j, c;
+    for (c = 0; c < n; c++) {
+      var piv = c; for (i = c + 1; i < n; i++) if (Math.abs(M[i][c]) > Math.abs(M[piv][c])) piv = i;
+      if (Math.abs(M[piv][c]) < 1e-300) return null;
+      var tmp = M[c]; M[c] = M[piv]; M[piv] = tmp;
+      var d = M[c][c]; for (j = 0; j < 2 * n; j++) M[c][j] /= d;
+      for (i = 0; i < n; i++) if (i !== c) { var f = M[i][c]; if (f !== 0) for (j = 0; j < 2 * n; j++) M[i][j] -= f * M[c][j]; }
+    }
+    return M.map(function (r) { return r.slice(n); });
+  };
+  S.solve = function (A, b) { var Ai = S.inv(A); return Ai && Ai.map(function (r) { var s = 0; for (var j = 0; j < r.length; j++) s += r[j] * b[j]; return s; }); };
+  /* Matriz de desenho: coluna de 1 (intercepto) e as colunas dadas. */
+  S.design = function (cols) { var n = cols[0].length; return Array.apply(null, Array(n)).map(function (_, i) { return [1].concat(cols.map(function (c) { return c[i]; })); }); };
+  /* Equações normais: (X'X) b = X'y. Devolve beta, valores ajustados, resíduos, RSS, R², erro padrão, t, (X'X)^-1 e a conferência max|X'e|. */
+  S.ols = function (X, y) {
+    var n = X.length, q = X[0].length, XtX = [], Xty = [], i, j, k;
+    for (j = 0; j < q; j++) { XtX.push(new Array(q).fill(0)); Xty.push(0); }
+    for (i = 0; i < n; i++) for (j = 0; j < q; j++) { Xty[j] += X[i][j] * y[i]; for (k = 0; k < q; k++) XtX[j][k] += X[i][j] * X[i][k]; }
+    var inv = S.inv(XtX), beta = inv.map(function (r) { var s = 0; for (var c = 0; c < q; c++) s += r[c] * Xty[c]; return s; });
+    var fit = X.map(function (r) { var s = 0; for (var c = 0; c < q; c++) s += r[c] * beta[c]; return s; }), res = y.map(function (v, t) { return v - fit[t]; });
+    var rss = 0, my = S.mean(y), tss = 0; for (i = 0; i < n; i++) { rss += res[i] * res[i]; tss += (y[i] - my) * (y[i] - my); }
+    var s2 = rss / (n - q), se = inv.map(function (r, c) { return Math.sqrt(s2 * r[c]); }), chk = 0;
+    for (j = 0; j < q; j++) { var s = 0; for (i = 0; i < n; i++) s += X[i][j] * res[i]; chk = Math.max(chk, Math.abs(s)); }
+    return { n: n, q: q, beta: beta, fit: fit, resid: res, rss: rss, tss: tss, r2: 1 - rss / tss, s2: s2, se: se, t: beta.map(function (b, c) { return b / se[c]; }), inv: inv, XtX: XtX, Xty: Xty, chk: chk };
+  };
+  /* VIF de cada coluna: regressão auxiliar da coluna k sobre as demais (com intercepto); VIF = 1 / (1 - R²_k); tolerância = 1 - R²_k. */
+  S.vifs = function (cols) {
+    return cols.map(function (c, k) {
+      var others = cols.filter(function (_, j) { return j !== k; }), r2 = S.ols(S.design(others), c).r2;
+      return { r2: r2, tol: 1 - r2, vif: 1 / (1 - r2) };
+    });
+  };
+  S.corr = function (a, b) { var ma = S.mean(a), mb = S.mean(b), sab = 0, saa = 0, sbb = 0; for (var i = 0; i < a.length; i++) { sab += (a[i] - ma) * (b[i] - mb); saa += (a[i] - ma) * (a[i] - ma); sbb += (b[i] - mb) * (b[i] - mb); } return sab / Math.sqrt(saa * sbb); };
+  /* Cauda superior da normal padrão: série de erf para |z| < 2,5 e fração contínua de erfc acima disso. */
+  S.normSf = function (x) {
+    var z = Math.abs(x) / Math.SQRT2, e;
+    if (z < 2.5) { var s = 0, term = z, k; for (k = 0; k < 80; k++) { s += term / (2 * k + 1); term *= -z * z / (k + 1); } e = 1 - 2 / Math.sqrt(Math.PI) * s; }
+    else { var t = z; for (var q = 80; q >= 1; q--) t = z + (q / 2) / t; e = Math.exp(-z * z) / (Math.sqrt(Math.PI) * t); }
+    var sf = 0.5 * e; return x >= 0 ? sf : 1 - sf;
+  };
+  /* |z| crítico bilateral: valor c com 2 * P(Z > c) = alpha (bisseção). */
+  S.normCrit = function (alpha) { var lo = 0, hi = 40, mid, i; for (i = 0; i < 200; i++) { mid = (lo + hi) / 2; if (2 * S.normSf(mid) > alpha) lo = mid; else hi = mid; } return (lo + hi) / 2; };
+  /* AICc de Brunsdon e colegas: 2 n ln(sigma) + n ln(2 pi) + n (n + trS) / (n - 2 - trS), com sigma = sqrt(RSS / n). Infinito se n - 2 - trS <= 0. */
+  S.aicc = function (rss, n, trS) { var dn = n - 2 - trS; if (!(dn > 0)) return Infinity; return 2 * n * Math.log(Math.sqrt(rss / n)) + n * Math.log(2 * Math.PI) + n * (n + trS) / dn; };
+  /* Kernel bisquare adaptativo: banda do centro i = distância ao k-ésimo município mais próximo (o próprio i conta como o 1º, a distância 0).
+     w_ij = (1 - (d_ij / b_i)²)² se d_ij < b_i, senão 0. ORD = S.scanOrder(plano): ORD[i].ord (municípios por distância) e ORD[i].dist. */
+  S.bisq = function (d, b) { if (!(d < b)) return 0; var u = d / b; return (1 - u * u) * (1 - u * u); };
+  S.gwrWeights = function (ORD, i, k) {
+    var o = ORD[i].ord, d = ORD[i].dist, b = d[k - 1], idx = [], w = [];
+    for (var t = 0; t < k; t++) { var v = S.bisq(d[t], b); if (v > 0) { idx.push(o[t]); w.push(v); } }
+    return { b: b, idx: idx, w: w };
+  };
+  /* GWR com banda de k vizinhos. X inclui o intercepto. detail = true calcula também S (diagonal e tr(S'S)), erros-padrão, pseudo-t e R² local.
+     trS = soma de S_ii, com S_ii = w_ii x_i' (X'W_iX)^-1 x_i e w_ii = 1. Variância residual para os erros-padrão: RSS / (n - 2 trS + tr(S'S)). */
+  S.gwr = function (X, y, ORD, k, detail) {
+    var n = X.length, q = X[0].length, beta = [], yhat = [], trS = 0, rss = 0, i, a, c, t, wt = detail ? [] : null, sdiag = [], Ainv = [], Bm = [], r2l = [], neff = [], trSS = 0;
+    for (i = 0; i < n; i++) {
+      var W = S.gwrWeights(ORD, i, k), A = [], r = new Array(q).fill(0);
+      for (a = 0; a < q; a++) A.push(new Array(q).fill(0));
+      for (t = 0; t < W.idx.length; t++) { var j = W.idx[t], w = W.w[t]; for (a = 0; a < q; a++) { r[a] += w * X[j][a] * y[j]; for (c = 0; c < q; c++) A[a][c] += w * X[j][a] * X[j][c]; } }
+      var inv = S.inv(A); if (!inv) return null;
+      var b = inv.map(function (row) { var s = 0; for (var u = 0; u < q; u++) s += row[u] * r[u]; return s; });
+      var xi = X[i], f = 0, sii = 0; for (a = 0; a < q; a++) { f += xi[a] * b[a]; var ia = 0; for (c = 0; c < q; c++) ia += inv[a][c] * xi[c]; sii += xi[a] * ia; }
+      beta.push(b); yhat.push(f); sdiag.push(sii); trS += sii; rss += (y[i] - f) * (y[i] - f);
+      if (detail) { wt.push(W); Ainv.push(inv); }
+    }
+    var out = { n: n, q: q, k: k, beta: beta, yhat: yhat, resid: y.map(function (v, i2) { return v - yhat[i2]; }), rss: rss, trS: trS, sdiag: sdiag, aicc: S.aicc(rss, n, trS) };
+    var my = S.mean(y), tss = 0; y.forEach(function (v) { tss += (v - my) * (v - my); }); out.r2 = 1 - rss / tss;
+    if (detail) {
+      /* linhas de S e tr(S'S) */
+      for (i = 0; i < n; i++) {
+        var Wi = wt[i], inv2 = Ainv[i], xi2 = X[i], v = [];
+        for (t = 0; t < Wi.idx.length; t++) { var j2 = Wi.idx[t], s = 0; for (a = 0; a < q; a++) { var ia2 = 0; for (c = 0; c < q; c++) ia2 += inv2[a][c] * X[j2][c]; s += xi2[a] * ia2; } s *= Wi.w[t]; trSS += s * s; }
+      }
+      out.delta1 = n - 2 * trS + trSS; out.trSS = trSS; out.s2 = rss / out.delta1;
+      out.se = []; out.t = []; out.r2loc = []; out.neff = []; out.wt = wt;
+      for (i = 0; i < n; i++) {
+        var Wi2 = wt[i], inv3 = Ainv[i], B = [], sw = 0, sw2 = 0, swy = 0;
+        for (a = 0; a < q; a++) B.push(new Array(q).fill(0));
+        for (t = 0; t < Wi2.idx.length; t++) { var j3 = Wi2.idx[t], w3 = Wi2.w[t]; sw += w3; sw2 += w3 * w3; swy += w3 * y[j3]; for (a = 0; a < q; a++) for (c = 0; c < q; c++) B[a][c] += w3 * w3 * X[j3][a] * X[j3][c]; }
+        var se = [], tt = []; for (a = 0; a < q; a++) { var m2 = 0; for (var u2 = 0; u2 < q; u2++) for (var v2 = 0; v2 < q; v2++) m2 += inv3[a][u2] * B[u2][v2] * inv3[v2][a]; var sea = Math.sqrt(out.s2 * m2); se.push(sea); tt.push(beta[i][a] / sea); }
+        var ybar = swy / sw, num = 0, den = 0;
+        for (t = 0; t < Wi2.idx.length; t++) { var j4 = Wi2.idx[t], w4 = Wi2.w[t], f4 = 0; for (a = 0; a < q; a++) f4 += X[j4][a] * beta[i][a]; num += w4 * (y[j4] - f4) * (y[j4] - f4); den += w4 * (y[j4] - ybar) * (y[j4] - ybar); }
+        out.se.push(se); out.t.push(tt); out.r2loc.push(1 - num / den); out.neff.push(sw * sw / sw2);
+      }
+    }
+    return out;
+  };
+  /* Curva do AICc: ajusta o GWR para cada k de kmin a kmax (passo 1) e devolve a lista e o k de menor AICc (empate: menor k). */
+  S.gwrCurve = function (X, y, ORD, kmin, kmax) {
+    var rows = [], best = null;
+    for (var k = kmin; k <= kmax; k++) { var g = S.gwr(X, y, ORD, k, false), r = { k: k, aicc: g ? g.aicc : Infinity, trS: g ? g.trS : NaN, rss: g ? g.rss : NaN }; rows.push(r); if (!best || r.aicc < best.aicc) best = r; }
+    return { rows: rows, best: best };
+  };
+
   return S;
 });

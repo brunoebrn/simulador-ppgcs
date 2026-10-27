@@ -131,14 +131,56 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
     await page.evaluate(() => { const ps = [...document.querySelectorAll("svg.map path.clk")]; const q = ps.find(p => /qd0/.test(p.getAttribute("class"))); if (q) q.dispatchEvent(new MouseEvent("click", { bubbles: true })); }); await page.waitForTimeout(200);
     if (!/Aglomerado nº 1/.test(await page.textContent(".stage .sum"))) { console.log(name, "satscan passo 6: clique no aglomerado sem leitura"); bad++; }
     await page.screenshot({ path: `${out}/${name}-satscan-secundarios.png`, fullPage: false });
+    for (let s7 = 1; s7 <= 8; s7++) {
+      await page.goto(url + "#gwr/" + s7); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(s7 === 5 ? 3500 : 1500);
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "gwr passo", s7, "rolagem horizontal de", ov, "px"); bad++; }
+      const nm = await page.evaluate(() => document.querySelectorAll("svg.map path").length), want = [0, 204, 0, 102, 102, 102, 0, 102, 204][s7];
+      if (nm < want) { console.log(name, "gwr passo", s7, "mapa com", nm, "municípios (esperado", want + ")"); bad++; }
+      const ctl = await page.evaluate(() => !!document.querySelector(".stage .mini"));
+      if (ctl !== (s7 === 5)) { console.log(name, "gwr passo", s7, "controles de animação", ctl ? "presentes" : "ausentes"); bad++; }
+      if (s7 === 5) { const t = await page.textContent(".stage .sum"); if (!/Pronto/.test(t)) { console.log(name, "gwr passo 5: animação não terminou:", t); bad++; } }
+      if (s7 === 6) { const t = await page.textContent("[data-live=conta6]"); if (!/AICc/.test(t) || !/OLS/.test(t)) { console.log(name, "gwr passo 6: faltou AICc do GWR e do OLS"); bad++; } }
+      await page.screenshot({ path: `${out}/${name}-gwr-passo${s7}.png`, fullPage: false });
+    }
+    await page.goto(url + "#gwr/2"); await page.waitForTimeout(400);
+    for (const lab of ["1: à mão", "2: cinco explicativas", "3: depois da escolha"]) {
+      await page.click(`.opts button:text-is('${lab}')`); await page.waitForTimeout(400);
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "gwr VIF", lab, "rolagem horizontal de", ov, "px"); bad++; }
+      const t = await page.textContent("[data-live=conta2]");
+      if (lab[0] === "1" && !(/3,19/.test(t) && /0,8286/.test(t))) { console.log(name, "gwr VIF etapa 1: faltou r = 0,8286 e VIF 3,19"); bad++; }
+      if (lab[0] === "2" && !/IVS/.test(t)) { console.log(name, "gwr VIF etapa 2: faltou a tabela das cinco"); bad++; }
+      await page.screenshot({ path: `${out}/${name}-gwr-vif-${lab[0]}.png`, fullPage: false });
+    }
+    await page.goto(url + "#gwr/4"); await page.waitForTimeout(500);
+    await page.click(".opts button:text-is('9999')"); await page.waitForTimeout(800);
+    if (!/9\.999/.test(await page.textContent("[data-live=conta4]"))) { console.log(name, "gwr passo 4: faltou M = 9.999"); bad++; }
+    await page.goto(url + "#gwr/5"); await page.waitForTimeout(500); await page.evaluate(() => window.PPGCS.clock.setSpeed(8));
+    const c5 = await page.textContent("[data-live=conta5]");
+    await page.evaluate(() => document.querySelectorAll("svg.map path.clk")[30].dispatchEvent(new MouseEvent("click", { bubbles: true }))); await page.waitForTimeout(600);
+    if (c5 === await page.textContent("[data-live=conta5]")) { console.log(name, "gwr passo 5: clique no município não atualizou"); bad++; }
+    await page.click(".opts button:text-is('102')"); await page.waitForTimeout(600);
+    if (!/k = <b>102|k = 102/.test(await page.innerHTML("[data-live=conta5]"))) { console.log(name, "gwr passo 5: k = 102 não refletido"); bad++; }
+    await page.goto(url + "#gwr/7"); await page.waitForTimeout(600);
+    const c7 = await page.textContent("[data-live=conta7]");
+    await page.click(".opts button:text-is('Bonferroni')"); await page.waitForTimeout(400);
+    if (c7 === await page.textContent("[data-live=conta7]") || !/Bonferroni/.test(await page.textContent("[data-live=conta7]"))) { console.log(name, "gwr passo 7: correção de Bonferroni não refletida"); bad++; }
+    await page.screenshot({ path: `${out}/${name}-gwr-bonf.png`, fullPage: false });
+    await page.click(".opts button:text-is('R² local')"); await page.waitForTimeout(400);
+    if (!/R² local/.test(await page.textContent("[data-live=conta7]"))) { console.log(name, "gwr passo 7: faltou R² local"); bad++; }
+    await page.screenshot({ path: `${out}/${name}-gwr-r2.png`, fullPage: false });
+    await page.click(".opts button:text-is('5 explicativas')"); await page.waitForTimeout(500);
+    if (!/IVS/.test(await page.textContent(".opts"))) { console.log(name, "gwr passo 7: modelo de 5 explicativas sem IVS"); bad++; }
+    await page.screenshot({ path: `${out}/${name}-gwr-5vars.png`, fullPage: false });
     await page.goto(url + "#aede/3"); await page.waitForTimeout(400); await page.evaluate(() => document.querySelectorAll("svg.map path.clk")[10].dispatchEvent(new MouseEvent("click", { bubbles: true }))); await page.waitForTimeout(200);
     if (!(await page.textContent("[aria-live=polite]")).match(/vizinhos/)) { console.log(name, "aede: clique no município não atualizou"); bad++; }
-    for (const m of ["joinpoint", "indicadores", "aede", "moran", "lisa", "satscan"]) {
+    for (const m of ["joinpoint", "indicadores", "aede", "moran", "lisa", "satscan", "gwr"]) {
       await page.goto(url + "#" + m + "/1"); await page.waitForTimeout(300);
       await page.evaluate(() => document.querySelectorAll("details.more").forEach(d => { d.open = true; })); await page.waitForTimeout(300);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) { console.log(name, m, "seções abertas: rolagem horizontal de", ov, "px"); bad++; }
-      if (m === "joinpoint" || m === "aede" || m === "moran" || m === "lisa" || m === "satscan") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
+      if (m === "joinpoint" || m === "aede" || m === "moran" || m === "lisa" || m === "satscan" || m === "gwr") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
     }
     const real = errs.filter(e => !/ERR_FILE_NOT_FOUND/.test(e)); errs.length = 0; errs.push(...real);
     if (errs.length) { console.log(name, "erros:", errs); bad++; }

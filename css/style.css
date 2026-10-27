@@ -257,3 +257,9 @@ svg.map .win, svg .win { fill: none; stroke: var(--text); stroke-width: 1.8; str
 svg .win.out { stroke: var(--muted); opacity: .6; }
 svg .tin { fill: var(--nbr); } svg .tout { fill: var(--panel2); }
 .legend .swfoc { background: transparent; border: 2px dashed var(--text); }
+
+/* Método 7 (VIF, OLS e GWR): barra de atenção do VIF e legendas */
+svg .bar-warn { fill: var(--c2); stroke: var(--bg); stroke-width: 2; }
+.legend .swref { background: transparent; border: 2px dashed var(--muted); }
+.legend .swc3 { background: var(--c3); }
+.opts .grp { flex-wrap: wrap; max-width: 100%; }
