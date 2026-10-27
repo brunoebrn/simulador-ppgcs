@@ -24,6 +24,13 @@
     "INSTITUTO BRASILEIRO DE GEOGRAFIA E ESTATÍSTICA. <b>AL_Municipios_2025.zip</b>: malha municipal de Alagoas, ano de referência 2025. [S. l.]: IBGE, 2025. Disponível em: https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2025/UFs/AL/. Acesso em: 26 out. 2026.",
     "MORAN, P. A. P. Notes on continuous stochastic phenomena. <b>Biometrika</b>, v. 37, n. 1/2, p. 17-23, 1950. DOI: 10.1093/biomet/37.1-2.17."
   ],
+  "lisa": [
+    "ANSELIN, L. Local indicators of spatial association – LISA. <b>Geographical Analysis</b>, v. 27, n. 2, p. 93-115, 1995. DOI: 10.1111/j.1538-4632.1995.tb00338.x.",
+    "CUNHA, N. S. P. <i>et al.</i> Spatial analysis of vaccine coverage on the first year of life in the northeast of Brazil. <b>BMC Public Health</b>, v. 22, art. 1204, 2022. DOI: 10.1186/s12889-022-13589-9.",
+    "CUNHA, N. S. P. <i>et al.</i> Spatial analysis of vaccine coverage in children under the age of 1 year by mesoregions in Paraíba a northeastern Brazilian state. <b>PLOS ONE</b>, v. 18, n. 7, e0288651, 2023. DOI: 10.1371/journal.pone.0288651.",
+    "INSTITUTO BRASILEIRO DE GEOGRAFIA E ESTATÍSTICA. <b>AL_Municipios_2025.zip</b>: malha municipal de Alagoas, ano de referência 2025. [S. l.]: IBGE, 2025. Disponível em: https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2025/UFs/AL/. Acesso em: 26 out. 2026.",
+    "MORAN, P. A. P. Notes on continuous stochastic phenomena. <b>Biometrika</b>, v. 37, n. 1/2, p. 17-23, 1950. DOI: 10.1093/biomet/37.1-2.17."
+  ],
   "indicadores": [
     "TEIXEIRA, A. M. S.; MOTA, E. L. A. Denominadores para o cálculo de coberturas vacinais: um estudo das bases de dados para estimar a população menor de um ano de idade. <b>Epidemiologia e Serviços de Saúde</b>, Brasília, v. 19, n. 3, p. 187-203, jul./set. 2010. DOI: 10.5123/S1679-49742010000300002.",
     "TEIXEIRA, A. M. S.; ROCHA, C. M. V. Vigilância das coberturas de vacinação: uma metodologia para detecção e intervenção em situações de risco. <b>Epidemiologia e Serviços de Saúde</b>, Brasília, v. 19, n. 3, p. 217-226, jul./set. 2010. DOI: 10.5123/S1679-49742010000300004.",

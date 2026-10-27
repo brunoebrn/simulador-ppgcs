@@ -245,3 +245,9 @@ svg.map path.cp { fill: var(--ll); } svg.map path.cn { fill: var(--hl); }
 .legend .swcp { background: var(--ll); } .legend .swcn { background: var(--hl); }
 .legend .swobs { background: var(--c3); border-radius: 50%; } .legend .swband { background: var(--line); }
 .conta td.num { white-space: nowrap; }
+
+/* Método 5 (LISA): sorteio condicional, hachura de denominador pequeno */
+:root { --drw: #1E8E7E; } :root[data-theme="dark"] { --drw: #3CC4AF; }
+svg.map path.drw { fill: var(--drw); }
+.legend .swdrw { background: var(--drw); } .legend .swhat { background: repeating-linear-gradient(45deg, transparent 0 2px, var(--text) 2px 3px); }
+.legend .swqe { background: var(--qe); }

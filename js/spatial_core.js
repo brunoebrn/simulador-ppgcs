@@ -174,5 +174,71 @@
   /* Inclinação da reta de mínimos quadrados de y sobre x (com intercepto). */
   S.slope = function (x, y) { var mx = S.mean(x), my = S.mean(y), a = 0, b = 0; for (var i = 0; i < x.length; i++) { a += (x[i] - mx) * (y[i] - my); b += (x[i] - mx) * (x[i] - mx); } return a / b; };
 
+  /* ---------- Moran local (LISA) ---------- */
+  /* I_i = z_i * (Wz)_i / (soma z² / n), com W padronizada por linha e z = desvio da média. A média dos I_i é o I global (S0 = n).
+     Devolve { n, z, wz, m2, I[], quad[] } (quad pelo mesmo critério do diagrama de Moran). */
+  S.localI = function (x, W) {
+    var n = x.length, z = S.dev(x), wz = S.lag(z, W), ss = 0, i;
+    for (i = 0; i < n; i++) ss += z[i] * z[i];
+    var m2 = ss / n;
+    return { n: n, z: z, wz: wz, m2: m2, I: z.map(function (zi, k) { return zi * wz[k] / m2; }), quad: z.map(function (zi, k) { return S.quadrant(zi, wz[k]); }) };
+  };
+  /* Semente própria de cada município, derivada da semente fixa: seed * 1000 + i. */
+  S.lisaSeed = function (seed, i) { return (seed * 1000 + i) >>> 0; };
+  /* Amostrador da permutação condicional: z_i fica fixo; os outros n-1 valores são permutados e os k_i primeiros vão para os vizinhos de i.
+     Sorteio parcial de Fisher-Yates sobre a lista dos outros municípios: para t = 0..k-1, j = t + floor(rnd() * (n-1-t)); troca o[t] com o[j].
+     A lista NÃO volta ao estado inicial entre réplicas (continua embaralhada). next() devolve { idx: municípios sorteados para os vizinhos, lag, I }. */
+  S.condSampler = function (z, W, i, seed, m2) {
+    var n = z.length, o = [], k = W.nb[i].length, w = W.w[i], rnd = S.rng(seed), t;
+    for (t = 0; t < n; t++) if (t !== i) o.push(t);
+    return {
+      k: k, n1: n - 1,
+      next: function () {
+        var lag = 0;
+        for (t = 0; t < k; t++) { var j = t + Math.floor(rnd() * (n - 1 - t)), tmp = o[t]; o[t] = o[j]; o[j] = tmp; lag += w[t] * z[o[t]]; }
+        return { idx: o.slice(0, k), lag: lag, I: z[i] * lag / m2 };
+      }
+    };
+  };
+  var TOLI = 1e-12;
+  /* Teste local do município i. Rup = réplicas com I >= I observado; Rlow = réplicas com I <= I observado (empates contam nos dois lados).
+     Lado usado: o de menor contagem (R = min(Rup, Rlow)); pseudo-p = (R + 1) / (M + 1); nunca zero. keep = true devolve também as M réplicas. */
+  S.condPerm = function (x, W, i, M, seed, keep, loc) {
+    loc = loc || S.localI(x, W);
+    var smp = S.condSampler(loc.z, W, i, S.lisaSeed(seed, i), loc.m2), obs = loc.I[i], up = 0, lo = 0, sims = keep ? new Array(M) : null;
+    for (var r = 0; r < M; r++) { var I = smp.next().I; if (I >= obs - TOLI) up++; if (I <= obs + TOLI) lo++; if (keep) sims[r] = I; }
+    var upper = up <= lo, R = upper ? up : lo;
+    return { I: obs, M: M, Rup: up, Rlow: lo, R: R, upper: upper, p: (R + 1) / (M + 1), sims: sims };
+  };
+  /* LISA completo: I_i, quadrantes e pseudo-p de todos os municípios. */
+  S.lisa = function (x, W, M, seed) {
+    var loc = S.localI(x, W), p = [], R = [], upper = [], i;
+    for (i = 0; i < loc.n; i++) { var t = S.condPerm(x, W, i, M, seed, false, loc); p.push(t.p); R.push(t.R); upper.push(t.upper); }
+    return { loc: loc, p: p, R: R, upper: upper, M: M, seed: seed };
+  };
+  /* Bonferroni: significativo se p <= alpha / m. */
+  S.bonferroni = function (p, alpha) { var lim = alpha / p.length; return { lim: lim, sig: p.map(function (v) { return v <= lim + 1e-15; }) }; };
+  /* FDR (Benjamini-Hochberg): ordena os p; maior posição i com p(i) <= i * alpha / m; todos até ela são significativos. Devolve { k, cut, sig, order }. */
+  S.fdr = function (p, alpha) {
+    var m = p.length, order = p.map(function (v, i) { return i; }).sort(function (a, b) { return p[a] - p[b] || a - b; }), k = 0, j;
+    for (j = 0; j < m; j++) if (p[order[j]] <= (j + 1) * alpha / m + 1e-15) k = j + 1;
+    var sig = p.map(function () { return false; }); for (j = 0; j < k; j++) sig[order[j]] = true;
+    return { k: k, cut: k ? p[order[k - 1]] : 0, sig: sig, order: order };
+  };
+  /* Teste exato do município i só para n pequeno: percorre as C(n-1, k) escolhas de quais valores vão para os vizinhos (todas igualmente prováveis).
+     Mesma regra de lado do teste por sorteio. Devolve { total, up, lo, count, p }. */
+  S.exactCond = function (x, W, i) {
+    var loc = S.localI(x, W), n = x.length, k = W.nb[i].length, others = [], obs = loc.I[i], up = 0, lo = 0, total = 0, t;
+    for (t = 0; t < n; t++) if (t !== i) others.push(t);
+    (function rec(start, chosen) {
+      if (chosen.length === k) { var lag = 0; chosen.forEach(function (c, q) { lag += W.w[i][q] * loc.z[c]; }); var I = loc.z[i] * lag / loc.m2; total++; if (I >= obs - TOLI) up++; if (I <= obs + TOLI) lo++; return; }
+      for (var q = start; q < others.length; q++) { chosen.push(others[q]); rec(q + 1, chosen); chosen.pop(); }
+    })(0, []);
+    var count = Math.min(up, lo);
+    return { total: total, up: up, lo: lo, count: count, p: count / total, I: obs };
+  };
+  /* Classe de CSS do mapa de clusters: qd0 alto-alto, qd1 baixo-alto, qd2 baixo-baixo, qd3 alto-baixo; "qe" = não significativo. */
+  S.clusterClass = function (quad, sig) { return sig ? "qd" + quad : "qe"; };
+
   return S;
 });
