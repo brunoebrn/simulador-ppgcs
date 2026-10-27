@@ -251,3 +251,9 @@ svg.map path.cp { fill: var(--ll); } svg.map path.cn { fill: var(--hl); }
 svg.map path.drw { fill: var(--drw); }
 .legend .swdrw { background: var(--drw); } .legend .swhat { background: repeating-linear-gradient(45deg, transparent 0 2px, var(--text) 2px 3px); }
 .legend .swqe { background: var(--qe); }
+
+/* Método 6 (varredura de Kulldorff): círculo da janela, exemplo mínimo */
+svg.map .win, svg .win { fill: none; stroke: var(--text); stroke-width: 1.8; stroke-dasharray: 6 4; pointer-events: none; }
+svg .win.out { stroke: var(--muted); opacity: .6; }
+svg .tin { fill: var(--nbr); } svg .tout { fill: var(--panel2); }
+.legend .swfoc { background: transparent; border: 2px dashed var(--text); }

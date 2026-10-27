@@ -240,5 +240,94 @@
   /* Classe de CSS do mapa de clusters: qd0 alto-alto, qd1 baixo-alto, qd2 baixo-baixo, qd3 alto-baixo; "qe" = não significativo. */
   S.clusterClass = function (quad, sig) { return sig ? "qd" + quad : "qe"; };
 
+  /* ---------- varredura espacial de Kulldorff (Poisson, alto risco, puramente espacial) ---------- */
+  /* Plano das distâncias: lon escalada por cos(lat média dos centroides) e lat como está (mesma regra do S.knn). Centroides em lon/lat também. */
+  S.planar = function (features) {
+    var c = features.map(S.centroid), lat = 0; c.forEach(function (p) { lat += p[1]; });
+    var kx = Math.cos(lat / c.length * Math.PI / 180);
+    return { x: c.map(function (p) { return p[0] * kx; }), y: c.map(function (p) { return p[1]; }), kx: kx, lonlat: c };
+  };
+  /* Para cada centro i: municípios em ordem de distância crescente (empate: menor índice). ord[i][0] = i. dist em unidades do plano. */
+  S.scanOrder = function (xy) {
+    var n = xy.x.length, out = [];
+    for (var i = 0; i < n; i++) {
+      var d = []; for (var j = 0; j < n; j++) { var dx = xy.x[i] - xy.x[j], dy = xy.y[i] - xy.y[j]; d.push([Math.sqrt(dx * dx + dy * dy), j]); }
+      d.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+      out.push({ ord: d.map(function (e) { return e[1]; }), dist: d.map(function (e) { return e[0]; }) });
+    }
+    return out;
+  };
+  /* LLR de Poisson para ALTO risco: c ln(c/E) + (C - c) ln((C - c)/(C - E)) se c > E, senão 0 (0 ln 0 = 0). */
+  S.llrPoisson = function (c, E, C) {
+    if (!(c > E)) return 0;
+    return c * Math.log(c / E) + (C - c > 0 ? (C - c) * Math.log((C - c) / (C - E)) : 0);
+  };
+  /* Risco relativo: risco dentro (c / pop dentro) dividido pelo risco fora ((C - c) / (P - pop dentro)). */
+  S.scanRR = function (c, popIn, C, P) { return (c / popIn) / ((C - c) / (P - popIn)); };
+  /* Estrutura das janelas para um limite de tamanho (fração da população total). Centro i, janela de k municípios = os k primeiros de ord[i];
+     vale se a população acumulada <= frac * P. kmax[i] = nº de janelas válidas do centro i; cum[i][k-1] = população acumulada da janela de k. */
+  S.scanSetup = function (order, pop, frac) {
+    var n = pop.length, P = 0, i, k; pop.forEach(function (v) { P += v; });
+    var limit = frac * P, ord = [], dist = [], kmax = [], cum = [], tot = 0;
+    for (i = 0; i < n; i++) {
+      var o = order[i].ord, a = new Float64Array(n), s = 0, km = 0, ok = true;
+      for (k = 0; k < n; k++) { s += pop[o[k]]; a[k] = s; if (ok && s <= limit + 1e-9) km = k + 1; else ok = false; }
+      ord.push(o); dist.push(order[i].dist); kmax.push(km); cum.push(a); tot += km;
+    }
+    return { n: n, P: P, frac: frac, limit: limit, ord: ord, dist: dist, kmax: kmax, cum: cum, pop: pop, nWindows: tot };
+  };
+  S.sum = function (x) { var s = 0; for (var i = 0; i < x.length; i++) s += x[i]; return s; };
+  /* Janela de maior LLR (empate: menor centro, menor k). Devolve { llr, ctr, k } (ctr = -1 se nenhuma janela tem c > E). */
+  S.scanBest = function (T, cases, C) {
+    var best = 0, bc = -1, bk = 0, P = T.P, n = T.n, i, k;
+    for (i = 0; i < n; i++) {
+      var ord = T.ord[i], cum = T.cum[i], km = T.kmax[i], c = 0;
+      for (k = 0; k < km; k++) {
+        c += cases[ord[k]];
+        var E = C * cum[k] / P;
+        if (c > E) { var l = S.llrPoisson(c, E, C); if (l > best) { best = l; bc = i; bk = k + 1; } }
+      }
+    }
+    return { llr: best, ctr: bc, k: bk };
+  };
+  /* Todas as janelas com LLR > 0, e o melhor k de cada centro. */
+  S.scanAll = function (T, cases) {
+    var C = S.sum(cases), P = T.P, n = T.n, wins = [], byCtr = [], i, k;
+    for (i = 0; i < n; i++) {
+      var ord = T.ord[i], cum = T.cum[i], km = T.kmax[i], c = 0, b = { llr: 0, k: 0 };
+      for (k = 0; k < km; k++) {
+        c += cases[ord[k]];
+        var E = C * cum[k] / P;
+        if (c > E) { var l = S.llrPoisson(c, E, C); wins.push({ ctr: i, k: k + 1, c: c, pop: cum[k], E: E, llr: l }); if (l > b.llr) b = { llr: l, k: k + 1 }; }
+      }
+      byCtr.push(b);
+    }
+    return { C: C, wins: wins, byCtr: byCtr };
+  };
+  /* Aglomerados sem municípios em comum: janelas em ordem decrescente de LLR (empate: centro e k crescentes); entra se nenhum município já foi usado. */
+  S.scanClusters = function (T, all, maxN) {
+    var w = all.wins.slice().sort(function (a, b) { return b.llr - a.llr || a.ctr - b.ctr || a.k - b.k; }), used = {}, out = [];
+    for (var q = 0; q < w.length && out.length < maxN; q++) {
+      var mem = T.ord[w[q].ctr].slice(0, w[q].k), clash = mem.some(function (m) { return used[m]; });
+      if (clash) continue;
+      mem.forEach(function (m) { used[m] = 1; });
+      out.push({ ctr: w[q].ctr, k: w[q].k, c: w[q].c, pop: w[q].pop, E: w[q].E, llr: w[q].llr, members: mem, rr: S.scanRR(w[q].c, w[q].pop, all.C, T.P) });
+    }
+    return out;
+  };
+  /* Sorteio multinomial dos C casos conforme a população: cada caso cai em um nascido vivo escolhido ao acaso (índice = floor(u * P)).
+     Fluxo mulberry32 contínuo entre réplicas (réplica r usa as sorteios r*C .. (r+1)*C - 1); next() devolve o vetor de casos simulados (reaproveitado). */
+  S.scanSampler = function (pop, C, seed) {
+    var n = pop.length, P = S.sum(pop), tab = new Uint8Array(P), q = 0, i, j, rnd = S.rng(seed), cs = new Int32Array(n);
+    for (i = 0; i < n; i++) for (j = 0; j < pop[i]; j++) tab[q++] = i;
+    return { next: function () { cs.fill(0); for (var t = 0; t < C; t++) cs[tab[Math.floor(rnd() * P)]]++; return cs; } };
+  };
+  /* Monte Carlo: M réplicas; R = réplicas cuja LLR máxima >= LLR observada; p = (R + 1) / (M + 1), nunca zero. */
+  S.scanMC = function (T, cases, M, seed, obs) {
+    var C = S.sum(cases), smp = S.scanSampler(T.pop, C, seed), sims = new Float64Array(M), R = 0;
+    for (var r = 0; r < M; r++) { var b = S.scanBest(T, smp.next(), C); sims[r] = b.llr; if (b.llr >= obs) R++; }
+    return { M: M, seed: seed, R: R, p: (R + 1) / (M + 1), sims: sims, obs: obs };
+  };
+
   return S;
 });

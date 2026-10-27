@@ -92,14 +92,53 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
     await page.evaluate(() => { const ps = [...document.querySelectorAll("svg.map path.clk")]; const q = ps.find(p => /qd\d/.test(p.getAttribute("class"))); if (q) q.dispatchEvent(new MouseEvent("click", { bubbles: true })); }); await page.waitForTimeout(200);
     if (!/núcleo/.test(await page.textContent(".stage .sum"))) { console.log(name, "lisa passo 6: clique em município colorido sem leitura do núcleo"); bad++; }
     await page.screenshot({ path: `${out}/${name}-lisa-nucleo.png`, fullPage: false });
+    for (let s6 = 1; s6 <= 7; s6++) {
+      await page.goto(url + "#satscan/" + s6); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(s6 === 5 ? 6000 : s6 === 4 ? 3500 : s6 === 3 ? 3500 : 1500);
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "satscan passo", s6, "rolagem horizontal de", ov, "px"); bad++; }
+      const nm = await page.evaluate(() => document.querySelectorAll("svg.map path").length), want = s6 === 2 ? 0 : s6 === 7 ? 306 : s6 === 1 ? 204 : s6 === 5 ? 102 : 102;
+      if (nm < want) { console.log(name, "satscan passo", s6, "mapa com", nm, "municípios (esperado", want + ")"); bad++; }
+      const ctl = await page.evaluate(() => !!document.querySelector(".stage .mini")), anim = [3, 4, 5].includes(s6);
+      if (ctl !== anim) { console.log(name, "satscan passo", s6, "controles de animação", ctl ? "presentes" : "ausentes", "(esperado", anim ? "presentes)" : "ausentes)"); bad++; }
+      if (anim) { const t = await page.textContent(".stage .sum"); if (!/Pronto/.test(t)) { console.log(name, "satscan passo", s6, "animação não terminou:", t); bad++; } }
+      if (s6 === 5) { const t = await page.textContent(".stage .sum"); if (!/0,001/.test(t)) { console.log(name, "satscan passo 5: faltou p mínimo 0,001:", t); bad++; } }
+      await page.screenshot({ path: `${out}/${name}-satscan-passo${s6}.png`, fullPage: false });
+    }
+    await page.goto(url + "#satscan/2"); await page.waitForTimeout(400);
+    for (const lab of ["1", "2", "3", "4", "5"]) {
+      await page.click(`.opts button:text-is('${lab}')`); await page.waitForTimeout(300);
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "satscan etapa", lab, "rolagem horizontal de", ov, "px"); bad++; }
+      const t = await page.textContent("[data-live=conta2]");
+      if (lab === "2" && !/18,420/.test(t)) { console.log(name, "satscan etapa 2: faltou LLR 18,420"); bad++; }
+      if (lab === "4" && !/25,265/.test(t)) { console.log(name, "satscan etapa 4: faltou LLR 25,265"); bad++; }
+      if (lab === "5" && !/3,25/.test(t)) { console.log(name, "satscan etapa 5: faltou risco relativo 3,25"); bad++; }
+      if (lab === "1" && !/165/.test(t)) { console.log(name, "satscan etapa 1: faltou C = 165"); bad++; }
+      if (lab === "3" || lab === "5") await page.screenshot({ path: `${out}/${name}-satscan-etapa-${lab}.png`, fullPage: false });
+    }
+    await page.goto(url + "#satscan/3"); await page.waitForTimeout(500);
+    const c3 = await page.textContent("[data-live=conta3]");
+    await page.evaluate(() => document.querySelectorAll("svg.map path.clk")[30].dispatchEvent(new MouseEvent("click", { bubbles: true }))); await page.waitForTimeout(300);
+    if (c3 === await page.textContent("[data-live=conta3]") && !/Centro: <b>/.test(c3)) { /* conta muda ao trocar o centro */ }
+    if (!(await page.textContent("[data-live=conta3]")).match(/Centro:/)) { console.log(name, "satscan passo 3: sem conta do centro"); bad++; }
+    await page.click(".opts button:text-is('10%')"); await page.waitForTimeout(500);
+    if (!/10%/.test(await page.textContent("[data-live=conta3]"))) { console.log(name, "satscan passo 3: limite 10% não refletido"); bad++; }
+    await page.goto(url + "#satscan/5"); await page.waitForTimeout(300); await page.evaluate(() => window.PPGCS.clock.setSpeed(8));
+    await page.click(".opts button:text-is('9999')"); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(12000);
+    { const t = await page.textContent(".stage .sum"); if (!(/Pronto/.test(t) && /0,0001/.test(t))) { console.log(name, "satscan passo 5 com 9999: animação não terminou:", t); bad++; } }
+    await page.screenshot({ path: `${out}/${name}-satscan-M9999.png`, fullPage: false });
+    await page.goto(url + "#satscan/6"); await page.waitForTimeout(800);
+    await page.evaluate(() => { const ps = [...document.querySelectorAll("svg.map path.clk")]; const q = ps.find(p => /qd0/.test(p.getAttribute("class"))); if (q) q.dispatchEvent(new MouseEvent("click", { bubbles: true })); }); await page.waitForTimeout(200);
+    if (!/Aglomerado nº 1/.test(await page.textContent(".stage .sum"))) { console.log(name, "satscan passo 6: clique no aglomerado sem leitura"); bad++; }
+    await page.screenshot({ path: `${out}/${name}-satscan-secundarios.png`, fullPage: false });
     await page.goto(url + "#aede/3"); await page.waitForTimeout(400); await page.evaluate(() => document.querySelectorAll("svg.map path.clk")[10].dispatchEvent(new MouseEvent("click", { bubbles: true }))); await page.waitForTimeout(200);
     if (!(await page.textContent("[aria-live=polite]")).match(/vizinhos/)) { console.log(name, "aede: clique no município não atualizou"); bad++; }
-    for (const m of ["joinpoint", "indicadores", "aede", "moran", "lisa"]) {
+    for (const m of ["joinpoint", "indicadores", "aede", "moran", "lisa", "satscan"]) {
       await page.goto(url + "#" + m + "/1"); await page.waitForTimeout(300);
       await page.evaluate(() => document.querySelectorAll("details.more").forEach(d => { d.open = true; })); await page.waitForTimeout(300);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) { console.log(name, m, "seções abertas: rolagem horizontal de", ov, "px"); bad++; }
-      if (m === "joinpoint" || m === "aede" || m === "moran" || m === "lisa") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
+      if (m === "joinpoint" || m === "aede" || m === "moran" || m === "lisa" || m === "satscan") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
     }
     const real = errs.filter(e => !/ERR_FILE_NOT_FOUND/.test(e)); errs.length = 0; errs.push(...real);
     if (errs.length) { console.log(name, "erros:", errs); bad++; }

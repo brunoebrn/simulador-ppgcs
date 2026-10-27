@@ -31,6 +31,12 @@
     "INSTITUTO BRASILEIRO DE GEOGRAFIA E ESTATÍSTICA. <b>AL_Municipios_2025.zip</b>: malha municipal de Alagoas, ano de referência 2025. [S. l.]: IBGE, 2025. Disponível em: https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2025/UFs/AL/. Acesso em: 26 out. 2026.",
     "MORAN, P. A. P. Notes on continuous stochastic phenomena. <b>Biometrika</b>, v. 37, n. 1/2, p. 17-23, 1950. DOI: 10.1093/biomet/37.1-2.17."
   ],
+  "satscan": [
+    "INSTITUTO BRASILEIRO DE GEOGRAFIA E ESTATÍSTICA. <b>AL_Municipios_2025.zip</b>: malha municipal de Alagoas, ano de referência 2025. [S. l.]: IBGE, 2025. Disponível em: https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2025/UFs/AL/. Acesso em: 26 out. 2026.",
+    "KULLDORFF, M. A spatial scan statistic. <b>Communications in Statistics – Theory and Methods</b>, v. 26, n. 6, p. 1481-1496, 1997. DOI: 10.1080/03610929708831995.",
+    "KULLDORFF, M. <b>SaTScan user guide for version 10.1</b>. [S. l.]: SaTScan, jul. 2022. Disponível em: https://www.satscan.org/techdoc.html. Acesso em: 26 out. 2026.",
+    "SATSCAN. <b>SaTScan</b>: software for the spatial, temporal, and space-time scan statistics. Versão 10.3.3. [S. l.], set. 2025. Disponível em: https://www.satscan.org/. Acesso em: 26 out. 2026."
+  ],
   "indicadores": [
     "TEIXEIRA, A. M. S.; MOTA, E. L. A. Denominadores para o cálculo de coberturas vacinais: um estudo das bases de dados para estimar a população menor de um ano de idade. <b>Epidemiologia e Serviços de Saúde</b>, Brasília, v. 19, n. 3, p. 187-203, jul./set. 2010. DOI: 10.5123/S1679-49742010000300002.",
     "TEIXEIRA, A. M. S.; ROCHA, C. M. V. Vigilância das coberturas de vacinação: uma metodologia para detecção e intervenção em situações de risco. <b>Epidemiologia e Serviços de Saúde</b>, Brasília, v. 19, n. 3, p. 217-226, jul./set. 2010. DOI: 10.5123/S1679-49742010000300004.",

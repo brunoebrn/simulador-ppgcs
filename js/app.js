@@ -8,7 +8,7 @@
     { id: "aede", n: 3, nome: "AEDE", d: "Vizinhança e defasagem espacial." },
     { id: "moran", n: 4, nome: "I de Moran Global", d: "Existe padrão espacial no conjunto?" },
     { id: "lisa", n: 5, nome: "Moran Local (LISA)", d: "Onde estão os aglomerados e os pontos fora da curva?" },
-    { id: "satscan", n: 6, nome: "Varredura de Kulldorff", d: "Aglomerados no espaço e no tempo." },
+    { id: "satscan", n: 6, nome: "Varredura de Kulldorff", d: "Existe um grupo de municípios com risco maior que o de fora?" },
     { id: "gwr", n: 7, nome: "VIF, OLS e GWR", d: "O que ajuda a explicar a cobertura." },
     { id: "encaixe", n: 8, nome: "Como se encaixam", d: "A cadeia do projeto e o que cada método não responde." }
   ];
