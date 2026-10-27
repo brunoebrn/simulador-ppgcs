@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador didático de métodos estatísticos | PPGCS/UFAL</title>
+<meta name="description" content="Simulador didático e estático dos métodos estatísticos do projeto de mestrado sobre cobertura vacinal infantil em Alagoas. Dados fictícios.">
+<meta name="color-scheme" content="light">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip" href="#conteudo">Ir para o conteúdo</a>
+<div class="ilus" role="note">ILUSTRATIVO: dados fictícios, não são resultados da pesquisa</div>
+<header class="top">
+  <div class="logos" aria-label="Espaço para os logos institucionais">
+    <div class="logo-slot" id="logo-ufal"><span>logo<br>UFAL</span><img src="assets/ufal.png" alt="UFAL" onload="this.parentNode.classList.add('has')" onerror="this.remove()"></div>
+    <div class="logo-slot" id="logo-ppgcs"><span>logo<br>PPGCS</span><img src="assets/ppgcs.png" alt="PPGCS" onload="this.parentNode.classList.add('has')" onerror="this.remove()"></div>
+  </div>
+  <h1>Simulador didático de métodos estatísticos<small>Cobertura vacinal infantil em Alagoas, 2000–2024 | PPGCS/UFAL</small></h1>
+  <div class="top-actions">
+    <button class="chip" id="b-banca" aria-pressed="false">Modo banca</button>
+    <button class="chip" id="b-tech" aria-pressed="false">Versão técnica</button>
+    <button class="chip" id="b-tema" aria-label="Alternar tema claro e escuro">Tema</button>
+  </div>
+</header>
+<div class="shell">
+  <nav class="nav" aria-label="Métodos"><ol id="menu"></ol></nav>
+  <main id="conteudo" tabindex="-1">
+    <div id="tabs" class="tabs" role="tablist" aria-label="Seções do método" hidden></div>
+    <div id="view"></div>
+  </main>
+</div>
+<div class="player" id="player" role="group" aria-label="Controle das animações">
+  <button class="btn" id="p-play" aria-pressed="false">Pausar</button>
+  <button class="btn" id="p-frame" aria-label="Avançar um quadro" title="Avança um quadro (uma réplica nas simulações)"><span class="long">Avançar um </span>quadro</button>
+  <button class="btn" id="p-restart">Reiniciar</button>
+  <span class="spd" id="p-speed" role="group" aria-label="Velocidade"><span class="lab">Velocidade</span></span>
+</div>
+<script src="js/stats.js"></script>
+<script src="js/data.js"></script>
+<script src="js/clock.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/methods/joinpoint.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
