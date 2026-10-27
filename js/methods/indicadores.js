@@ -51,7 +51,6 @@
       conta: function () { return tabelaBase([["Nascidos vivos", function (x) { return x.nv; }], ["1ª dose", function (x) { return x.d1; }], ["3ª dose", function (x) { return x.d3; }]]); },
       tech: "<p>Linha = município; colunas = denominador (nascidos vivos, população-alvo) e doses aplicadas (projeto de pesquisa, seção 3.3). Aqui a \"3ª dose\" é só um exemplo de dose final do esquema.</p>",
       q: "De onde vêm os nascidos vivos no projeto real?", a: "O projeto aponta o SINASC como denominador; os testes e limitações dele estão no S5i e no S5m (F13).",
-      src: [["PDF 3.3 a", "PDF"], ["S5i, S5m F13", "LIDO"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.nv; }), { ymax: 6000, step: 1000, ylabel: "nascidos vivos", label: "Nascidos vivos por município fictício" }); cap(st, "Altura = nascidos vivos. O município F é grande e o J é minúsculo."); } },
 
     { t: "Cobertura vacinal",
@@ -60,7 +59,6 @@
       conta: function () { return "<span class=eq>Cobertura = doses ÷ nascidos vivos × 100</span><span class=eq>Município A: 2.300 ÷ 2.400 × 100 = <b>" + f1(L[0].cv) + "%</b></span>" + tabelaBase([["3ª dose", function (x) { return x.d3; }], ["Nascidos", function (x) { return x.nv; }], ["Cobertura (%)", function (x) { return f1(x.cv); }]]); },
       tech: "<p>CV = razão entre doses aplicadas e população-alvo (nascidos vivos), em percentual (projeto de pesquisa, seção 3.3 a). O cálculo aqui é transversal simples; o método por coorte difere.</p>",
       q: "Por que a cobertura pode passar de 100%?", a: "Porque numerador e denominador vêm de fontes diferentes. Isso é sinal de erro de registro ou de denominador, não de “vacinar demais” (passo 6).",
-      src: [["PDF 3.3 a", "PDF"], ["S5m F14", "INFERÊNCIA"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.cv; }), { ymax: 150, step: 25, cls: function () { return "bar"; }, label: "Cobertura por município fictício" }); cap(st, "Altura = cobertura (%). Há municípios acima de 100%."); } },
 
     { t: "A meta de 95%",
@@ -69,7 +67,6 @@
       conta: function () { return "<span class=eq>sim se doses × 100 ≥ 95 × nascidos</span><span class=eq>Município I: 1.425 × 100 = 142.500 ≥ 95 × 1.500 = 142.500 → <b>sim</b></span>" + tabelaBase([["Cobertura (%)", function (x) { return f1(x.cv); }], ["≥ 95?", function (x) { return x.atinge ? "sim" : "não"; }]]); },
       tech: "<p>A meta de 95% é preconizada pelo Ministério da Saúde (projeto de pesquisa, seção 3.3 c). Já aparece, por exemplo, na Portaria MS nº 2.394/2003, para a tetravalente, e é repetida em documentos posteriores.</p>",
       q: "De onde vem a meta de 95%?", a: "O Ministério da Saúde preconiza 95% para a maioria das vacinas; a Portaria nº 2.394/2003, por exemplo, já usava essa meta para a tetravalente.",
-      src: [["S5r tabela 2", "LIDO-WebFetch"], ["S5r seção 1", "NÃO LOCALIZADO"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.cv; }), { ymax: 150, step: 25, meta: 95, cls: CL, label: "Municípios que atingem 95%" }); cap(st, "Barra azul: atingiu 95%. Barra de destaque: não atingiu."); } },
 
     { t: "Homogeneidade",
@@ -78,7 +75,6 @@
       conta: function () { return "<span class=eq>Homogeneidade = municípios com cobertura ≥ 95% ÷ total de municípios × 100</span><span class=eq>" + R.nAtinge + " ÷ " + R.n + " × 100 = <b>" + f1(R.homog) + "%</b></span>"; },
       tech: "<p>Definição do projeto (seção 3.3 c), igual à de Teixeira e Rocha (2010). Há outras definições em uso: por exemplo, considerar a homogeneidade adequada quando pelo menos 70% dos municípios atingem a meta. O projeto usa a proporção bruta de municípios com 95% ou mais.</p>",
       q: "Por que não a média estadual?", a: "A média esconde municípios abaixo da meta, e a justificativa citada é reduzir bolsões de suscetíveis.",
-      src: [["PDF 3.3 c", "PDF"], ["S5r seção 3 e 4", "LIDO-WebFetch"]],
       viz: function (st) {
         var w = C.width(st), h = 120, svg = el("svg", { viewBox: "0 0 " + w + " " + h, role: "img", "aria-label": "Quadrados dos municípios" }, st), n = R.n, gap = 6, s = Math.min(48, (w - 16 - gap * (n - 1)) / n), x0 = (w - (s * n + gap * (n - 1))) / 2, qs = [];
         L.forEach(function (x, i) { var r = el("rect", { x: x0 + i * (s + gap), y: 20, width: s, height: s, rx: 4, "class": "bar-hit", opacity:.35 }, svg); el("text", { x: x0 + i * (s + gap) + s / 2, y: 20 + s / 2 + 5, "text-anchor": "middle", "font-size": 13, "font-weight": 700 }, svg, String.fromCharCode(65 + i)); qs.push(r); });
@@ -92,7 +88,6 @@
       conta: function () { return "<span class=eq>TA = (dose inicial − dose final) ÷ dose inicial × 100</span><span class=eq>Município B: (1.790 − 1.700) ÷ 1.790 × 100 = <b>" + f1(L[1].ta) + "%</b></span><span class=eq>Município G: (150 − 155) ÷ 150 × 100 = <b>" + f1(L[6].ta) + "%</b> (negativa)</span>" + tabelaBase([["1ª dose", function (x) { return x.d1; }], ["3ª dose", function (x) { return x.d3; }], ["Abandono (%)", function (x) { return f1(x.ta); }]]); },
       tech: "<p>Fórmula do projeto (seção 3.3 b). A mesma forma é usada pela OMS (2018), por Peck et al. (2019) e por Kirkby et al. (2021). Dose final maior que a inicial indica possível problema de qualidade dos dados; Kirkby et al. excluem os valores negativos e Moura et al. (2023) os substituíram pelo valor do ano anterior, decisões desses estudos. No dado agregado, não se acompanha a mesma criança. Para a tríplice viral, as duas doses ficam em coortes distintas, e Peck et al. usam a diferença de pontos percentuais em vez da taxa de abandono.</p>",
       q: "Como o projeto trata abandono negativo?", a: "Mantém o valor e marca como alerta de qualidade, sem interpretá-lo como melhora.",
-      src: [["PDF 3.3 b", "PDF"], ["S5k seção 3", "LIDO"], ["S5k 3.4 faixas", "SECUNDÁRIO"], ["S5m F16", "LIDO"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.ta; }), { ymin: -10, ymax: 20, step: 5, cls: function (i) { return L[i].ta < 0 ? "bar-hit" : "bar"; }, label: "Taxa de abandono por município fictício", ylabel: "abandono (%)" }); cap(st, "Barra de destaque abaixo do zero: dose final maior que a inicial (município G)."); } },
 
     { t: "Cobertura acima de 100%",
@@ -101,7 +96,6 @@
       conta: function () { return tabelaBase([["Cobertura (%)", function (x) { return f1(x.cv); }], [">100", function (x) { return x.gt100 ? "●" : ""; }], [">110", function (x) { return x.gt110 ? "●" : ""; }], [">120", function (x) { return x.gt120 ? "●" : ""; }], ["<50", function (x) { return x.lt50 ? "●" : ""; }]]) + "<p>Resumo: " + R.nGt100 + " municípios acima de 100, " + R.nGt110 + " acima de 110, " + R.nAcima120 + " acima de 120 e " + R.nLt50 + " abaixo de 50.</p>"; },
       tech: "<p>Decisão do projeto: a base fica sem teto, com bandeiras para cobertura acima de 100%, 110% e 120% e abaixo de 50%; o teto de 100% só vale em mapas e médias, com o valor bruto na legenda. Os limiares vêm de dois artigos do mesmo fascículo: acima de 110% e abaixo de 50% como eventos sentinela (Teixeira e Mota, 2010) e acima de 120% ou abaixo de 50% como valores aberrantes (Teixeira e Rocha, 2010). Os dois limiares divergem e os dois são mostrados. A OMS (2022) também cita estimativas muito acima de 100% como sinal de baixa acurácia. Só com dado administrativo, não se distingue erro de numerador, de denominador ou migração.</p>",
       q: "Por que não limitar em 100%?", a: "Porque a homogeneidade é binária: 130% e 100% dão o mesmo “sim”. O teto só mudaria médias e mapas.",
-      src: [["S5y seções 1 a 3", "DECISÃO"], ["S5y tabela", "LIDO-WebFetch"], ["S5m F15", "LIDO-WebFetch"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.cv; }), { ymax: 150, step: 25, meta: 120, metaLabel: "120%", cls: function (i) { return L[i].gt120 ? "bar-hit" : "bar"; }, label: "Municípios acima de 120%" }); cap(st, "Barras de destaque: acima de 120% (municípios E e G)."); } },
 
     { t: "Sensibilidade nos dois limites",
@@ -110,7 +104,6 @@
       conta: function () { return "<span class=eq>Principal: " + R.nAtinge + " ÷ " + R.n + " × 100 = <b>" + f1(R.homog) + "%</b></span><span class=eq>(a) Limite superior (>120% como “atingiu”): " + R.nAtinge + " ÷ " + R.n + " = <b>" + f1(R.sensSup) + "%</b></span><span class=eq>(b) Limite inferior (>120% fora): " + R.nAtingeValidos + " ÷ " + R.nValidos + " × 100 = <b>" + f1(R.sensInf) + "%</b></span><p>Municípios afetados: " + R.nAcima120 + " de " + R.n + ".</p>"; },
       tech: "<p>A principal é a bruta. O limite superior conta os municípios acima de 120% como \"atingiu a meta\"; o inferior os retira do numerador e do denominador. Os limiares de 110% e 100% entram só como bandeira descritiva. Neste exemplo, o limite superior coincide com a principal por construção.</p>",
       q: "Qual das três é “a verdadeira”?", a: "Nenhuma é a verdade; a principal é a definição do projeto e as outras mostram a faixa em que ela pode estar.",
-      src: [["S5y seção 3", "DECISÃO"]],
       viz: function (st) {
         var vals = [R.homog, R.sensSup, R.sensInf], names = ["Principal", "Limite superior", "Limite inferior"], w = C.width(st), h = 200, m = { l: 112, r: 50, t: 12, b: 24 }, bh = 34;
         var svg = el("svg", { viewBox: "0 0 " + w + " " + h, role: "img", "aria-label": "Três homogeneidades" }, st), rs = [], ts = [];
@@ -125,7 +118,6 @@
       conta: function () { return "<span class=eq>Município J: " + SMALL.d3 + " ÷ " + SMALL.nv + " × 100 = <b>" + f1(SMALL.d3 * 100 / SMALL.nv) + "%</b></span><span class=eq>Município F: 5.150 ÷ 5.200 × 100 = <b>" + f1(L[5].cv) + "%</b>; com mais 1 criança, " + f1(5151 * 100 / 5200) + "%</span><p>Municípios com menos de 1.000 nascidos neste exemplo: " + R.nPequenos + " de " + R.n + ".</p>"; },
       tech: "<p>Bandeira de denominador pequeno (menos de 1.000 crianças), alinhada à cautela de Teixeira e Mota (2010). Valores aberrantes são mais frequentes em municípios pequenos (Teixeira e Rocha, 2010). Suavizar os dados pode esconder o erro de registro, que é objeto do estudo; por isso o valor bruto é mantido.</p>",
       q: "Por que não suavizar os dados?", a: "A suavização pode esconder o erro de registro, que é objeto do estudo. Só entra como camada opcional ao lado do bruto.",
-      src: [["S5m F18, F19, F43", "LIDO-WebFetch"], ["S5y seção 3 item 5", "DECISÃO"]],
       viz: function (st) {
         var d = SMALL.d3, box = document.createElement("div"); box.className = "dataset"; st.appendChild(box);
         var out = document.createElement("p"); out.className = "sum"; out.setAttribute("aria-live", "polite");

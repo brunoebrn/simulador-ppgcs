@@ -59,7 +59,6 @@
       conta: function (S) { return "<table><tr><th>Ano</th>" + S.ser.anos.map(function (a) { return "<th class=num>" + a + "</th>"; }).join("") + "</tr><tr><th>Cobertura (%)</th>" + S.ser.cob.map(function (c) { return "<td class=num>" + c + "</td>"; }).join("") + "</tr></table>"; },
       tech: function (S) { return "<p>Série anual y<sub>t</sub>, t = 1…" + S.n + ". O Joinpoint ajusta um modelo de segmentos de reta unidos (contínuo) nos pontos de mudança. Aqui os dados são fictícios e fixos.</p>" + (S.key === "5" ? "<p><b>Por que 5 pontos?</b> Só para ver o mecanismo. O manual diz que “pelo menos sete pontos de dados” devem existir para considerar permitir um joinpoint e, na tabela do máximo padrão, 0 a 6 pontos dá 0 joinpoints. A fórmula de observações mínimas, com as restrições padrão de 2 e 2, dá 5 para 1 joinpoint(conta própria: 2·2 + 0·2 + 1 = 5, " + "a conferir no software). Ou seja, o programa só aceitaria 1 dobra em 5 pontos se o analista pedir esse máximo à mão, contra a recomendação do manual.</p>" : "<p>Série de 25 pontos (2000–2024), o tamanho do nosso projeto. Para 22–26 pontos o máximo padrão de joinpoints é 4.</p>"); },
       q: "Por que usar só 5 pontos no exemplo?", a: "Porque a conta cabe na tela. O próprio manual desaconselha dobras com menos de 7 pontos; no projeto real a série tem 25 pontos.",
-      src: [["45–46", "LIDO"], ["48", "LIDO"]],
       viz: function (st, S) { var ch = baseChart(st, S, "Cobertura por ano (fictícia)"), g = ch.g, pts = [], line;
         ch.points(S.ser.cob, "pt", 6, g).forEach(function (p) { p.style.opacity = 0; pts.push(p); });
         clock.tween(Math.max(1.5, S.n * .2), function (p) { var k = Math.floor(p * S.n + 1e-9); pts.forEach(function (c, i) { c.style.opacity = i < k ? 1 : 0; }); if (p >= 1) { if (!line) line = ch.line(S.ser.cob, "l-data", g); pts.forEach(function (c) { c.style.opacity = 1; g.appendChild(c); }); } });
@@ -72,7 +71,6 @@
       conta: function (S) { var r = S.ser.cob.slice(0, Math.min(S.n, 5)).map(function (c, i) { return "<span class=eq>" + S.ser.anos[i] + ": ln(" + fmt(c / 100, 2) + ") = " + f4(Math.log(c / 100)) + "</span>"; }).join(""); return r + (S.n > 5 ? "<span class=eq>… (as demais " + (S.n - 5) + " seguem o mesmo cálculo)</span>" : ""); },
       tech: function () { return "<p>Modelo log-linear: ln(y) = b₀ + b₁·x + e. Dentro de cada segmento, ln da taxa é linear no tempo e APC = (e<sup>b₁</sup> − 1) × 100, o que pressupõe variação percentual constante no segmento. Percentuais devem ser transformados em proporções antes da análise.</p><p>Escolha entre linear e log-linear: o manual manda escolher o modelo cuja análise de resíduos indique melhor ajuste. Com cobertura perto do teto de 100%, isso precisa ser verificado nos resíduos.</p>"; },
       q: "Por que não ajustar a cobertura direto, sem ln?", a: "Seria um modelo linear em pontos percentuais. O manual aceita os dois e manda escolher pela análise de resíduos; o APC percentual vem do modelo log-linear. A escolha para a série real depende da análise dos resíduos.",
-      src: [["1–4", "LIDO"], ["8–9", "LIDO"]],
       viz: function (st, S) { var a = new C.Chart(st, { xs: S.ser.anos, ymin: S.yr[0] / 100, ymax: 1, ystep: S.key === "5" ? .1 : .05, yfmt: function (v) { return fmt(v, 2); }, ylabel: "proporção", h: 190, label: "Proporção por ano" });
         var lo = Math.log(S.yr[0] / 100), b = new C.Chart(st, { xs: S.ser.anos, ymin: lo, ymax: 0, ystep: S.key === "5" ? .2 : .05, yfmt: function (v) { return fmt(v, 2); }, ylabel: "ln(proporção)", h: 190, label: "ln da proporção por ano" });
         a.points(S.ser.cob.map(function (c) { return c; }).map(function (c) { return c; }), "pt", 0, a.g);
@@ -87,7 +85,6 @@
       conta: function (S) { var b = S.f0.beta; return "<span class=eq>Reta no ln: ln(y) = " + f4(b[0]) + " + (" + f4(b[1]) + ")·x</span><span class=eq>Soma dos quadrados dos erros da reta única: <b>SSE_N = " + f4(S.f0.sse) + "</b></span><span class=eq>Variação percentual anual desta reta única: (e^" + f4(b[1]) + " − 1)·100 = " + sg((Math.exp(b[1]) - 1) * 100, 2) + "%</span>"; },
       tech: function () { return "<p>É o modelo nulo da primeira comparação: k = 0 joinpoints, sem dobra. O ajuste é por mínimos quadrados ordinários, que supõe erros não correlacionados com variância constante. O SSE mínimo para k joinpoints vem do grid search de Lerman; para k = 0 é simplesmente a reta de mínimos quadrados.</p>"; },
       q: "O que é SSE?", a: "A soma dos quadrados das distâncias entre cada ponto e a linha do modelo, na escala ln. Quanto menor, melhor o ajuste.",
-      src: [["10", "LIDO"], ["14", "LIDO"]],
       viz: function (st, S) { var ch = baseChart(st, S, "Uma reta única"), g = ch.g, fit = pctFit(S, S.f0.fitted);
         ch.line(fit, "l-null", g); var res = S.ser.cob.map(function (c, i) { return el("line", { x1: ch.x(i), x2: ch.x(i), y1: ch.y(c), y2: ch.y(c), "class": "res" }, g); });
         ch.line(S.ser.cob, "l-data", g); ch.points(S.ser.cob, "pt", 5, g);
@@ -101,7 +98,6 @@
       conta: function (S) { var c = ST.bestFit(S.y, 1, Object.assign({ collect: true }, OPTS)); return "<span class=eq>Posições testadas: " + c.nConfigs + "</span><span class=eq>Melhor dobra: <b>" + S.ser.anos[c.taus[0]] + "</b> com SSE = " + f4(c.sse) + " (contra " + f4(S.f0.sse) + " da reta única)</span>"; },
       tech: function () { return "<p>Modelo: E[y|x] = β₀ + β₁x + δ₁(x − τ₁)₊, contínuo em τ₁. Grid search de Lerman: cria uma grade de todas as posições permitidas e calcula o SSE em cada uma. Por padrão, joinpoints só em observações; não pode haver joinpoint a menos de 2 pontos das pontas, e deve haver pelo menos 2 pontos entre dois joinpoints.</p><p>Inconsistência interna do manual, documentada e não harmonizada: a página diz “Max = 7” e também “máximo de 9” para o grid search.</p>"; },
       q: "O Joinpoint prova que algo mudou naquele ano?", a: "Não. Ele escolhe o ano que melhor encaixa. Se a mudança é real, quem decide é o teste da próxima etapa, e a causa ele não explica.",
-      src: [["5–6", "LIDO"], ["10–13", "LIDO"], ["44", "LIDO"], ["47", "LIDO"]],
       viz: function (st, S) { var ch = baseChart(st, S, "Teste de cada posição da dobra"), g = ch.g, all = ST.bestFit(S.y, 1, Object.assign({ collect: true }, OPTS)).all, m = all.length;
         ch.points(S.ser.cob, "pt", 4, g); var cand = el("path", { "class": "l-alt", d: "" }, g), mark = el("circle", { r: 8, "class": "pt-break", cx: -20, cy: -20 }, g);
         var W4 = C.width(st), bars = el("svg", { viewBox: "0 0 " + W4 + " 110", role: "img", "aria-label": "SSE de cada posição" }, st), mx = Math.max.apply(null, all.map(function (a) { return a.sse; })), bw = (W4 - 40) / m;
@@ -129,7 +125,6 @@
       conta: function (S) { return "<span class=eq>SSE_N (0 dobras) = " + f4(S.f0.sse) + "</span><span class=eq>SSE_A (" + S.kMax + " dobra" + (S.kMax > 1 ? "s" : "") + ") = " + f4(S.fA.sse) + "</span><span class=eq><b>T = SSE_N / SSE_A = " + f2(S.T) + "</b></span>"; },
       tech: function () { return "<p>Estatística do teste: T = SSE_N / SSE_A. Valores de T próximos de 1 indicam que o alternativo não é muito melhor que o nulo; valores maiores indicam que é muito melhor. A distribuição de T não é obtida analiticamente, por isso se usa a permutação.</p>"; },
       q: "T grande já prova que a dobra existe?", a: "Não. Precisa comparar com o que T faria se a dobra não existisse (o liquidificador do próximo passo).",
-      src: [["18–19", "LIDO"], ["21", "LIDO"]],
       viz: function (st, S) { var W5 = C.width(st), s = el("svg", { viewBox: "0 0 " + W5 + " 150", role: "img", "aria-label": "Comparação de SSE" }, st), W = W5 - 150;
         var items = [["Régua única (SSE_N)", S.f0.sse, "bar"], ["Com dobra(s) (SSE_A)", S.fA.sse, "bar-hit"]], rs = [], vs = [];
         items.forEach(function (it, i) { el("text", { x: 12, y: 24 + i * 50, "font-size": 13, "font-weight": 700 }, s, it[0]); rs.push(el("rect", { x: 12, y: 32 + i * 50, width: 0, height: 22, "class": it[2] }, s)); vs.push(el("text", { x: 16, y: 48 + i * 50, "font-size": 13, fill: "#fff" }, s, "")); });
@@ -145,7 +140,6 @@
       conta: function (S) { return '<span class=eq>T observado = ' + f2(S.T) + '</span><span class=eq data-live="p">p = séries falsas com ganho ≥ real ÷ séries geradas</span>'; },
       tech: function () { return "<p>Permutam-se os resíduos do modelo nulo e somam-se de volta aos valores modelados por ele, formando um conjunto de dados de permutação. O p-valor é a proporção de conjuntos permutados cujo T é pelo menos tão extremo quanto o observado; rejeita-se o nulo se p for menor que o nível do teste. Sob H₀ o p-valor é uniforme em (0,1).</p><p>É uma amostra Monte Carlo das N! permutações possíveis. Mínimo 1000 réplicas, máximo 10.000, recomendação de pelo menos 4499; o padrão atual é 4499 e versões antigas usavam 999. Aqui usamos o mínimo, 1000, para a animação ser rápida. O resultado depende da semente; a nossa é fixa (" + SEED + "), então este simulador sempre dá o mesmo resultado.</p><p><b>O que o p-valor diz:</b> quão compatível o ganho observado é com o acaso sob o modelo nulo. Não “prova” a dobra.</p>"; },
       q: "Mil sorteios é o número certo?", a: "É o mínimo permitido pelo manual. A recomendação é pelo menos 4499 e o padrão atual é 4499. Com poucos sorteios o p-valor varia mais entre rodadas; por isso a semente é fixada e declarada.",
-      src: [["20–27", "LIDO"], ["86", "LIDO"]],
       viz: function (st, S, ctl) { return permViz(st, S, ctl); } },
 
     { t: "A fila de testes", // 7
@@ -154,7 +148,6 @@
       conta: function (S) { return "<div class='tbl-wrap' data-live='seq'></div>"; },
       tech: function (S) { return "<p>Procedimento sequencial: H₀: k = ka contra H₁: k = kb, começando em ka = MIN e kb = MAX; se H₀ é rejeitada sobe-se ka, senão desce-se kb, até ka = kb. A partir da versão 3.0 o nível de cada teste é α(ka, kb) = α/(MAX − ka), com α global padrão 0,05; antes da v3.0 usava-se Bonferroni. Neste exemplo MIN = 0 e MAX = " + S.kMax + ".</p><p>Mudar MIN ou MAX muda os níveis e pode mudar o modelo final. A permutação tende a detectar menos joinpoints. Desde a versão 5.0 o padrão do programa é o WBIC, e não a permutação; este simulador mostra a permutação porque é o método descrito no manual como clássico (Kim et al., 2000). A escolha para o projeto está <b>pendente</b>.</p>"; },
       q: "O programa atual ainda usa permutação?", a: "Pode usar, mas o padrão desde a versão 5.0 é o WBIC. Qual método usar é uma escolha de configuração.",
-      src: [["17", "LIDO"], ["29–34", "LIDO"], ["39", "LIDO"]],
       viz: function (st, S) { var box = document.createElement("div"); st.appendChild(box); box.innerHTML = "<p class=cap>A tabela abaixo mostra cada teste da fila.</p>"; var c = new C.Chart(st, { xs: S.ser.anos, ymin: S.yr[0], ymax: S.yr[1], ystep: S.yr[2], ylabel: "cobertura (%)", h: 260, label: "Série e modelo escolhido" }); ch2(c, S); } },
 
     { t: "APC: variação por ano em cada trecho", // 8
@@ -163,7 +156,6 @@
       conta: function (S) { return "<div data-live='apc'></div>"; },
       tech: function (S) { return "<p>APC = (e<sup>b</sup> − 1) × 100, com b a inclinação do segmento no ln. As inclinações são obtidas do modelo contínuo ajustado; o APC é uma variação percentual relativa, e não pontos percentuais.</p>" + (S.key === "5" ? " " : ""); },
       q: "APC de −25% quer dizer que a cobertura caiu 25 pontos por ano?", a: "Não. Quer dizer que a cobertura cai cerca de 25% do valor do ano anterior a cada ano, naquele trecho.",
-      src: [["2–4", "LIDO"]],
       viz: function (st, S) { var c = new C.Chart(st, { xs: S.ser.anos, ymin: S.yr[0], ymax: S.yr[1], ystep: S.yr[2], ylabel: "cobertura (%)", h: 300, label: "Modelo escolhido com APC por trecho" }); ch2(c, S, true); } },
 
     { t: "AAPC: uma média do período", // 9
@@ -172,7 +164,6 @@
       conta: function (S) { return "<div data-live='aapc'></div>"; },
       tech: function () { return "<p>AAPC = { exp( Σ wᵢbᵢ / Σ wᵢ ) − 1 } × 100, com wᵢ o comprimento de cada segmento dentro do intervalo. Não é a média aritmética dos APCs. Depende do intervalo escolhido e, se o intervalo cabe em um só segmento, é igual ao APC dele.</p><p>O IC do AAPC mostrado no manual é baseado na normal. <b>Termo “método delta”:</b> não aparece nas páginas lidas do manual; por isso o simulador descreve o cálculo e não usa esse nome.</p>"; },
       q: "O AAPC é a média dos APCs?", a: "Não exatamente: é a exponencial da média ponderada das inclinações, menos 1. Com APCs moderados a diferença é pequena.",
-      src: [["66–73", "LIDO"], ["76", "NÃO LOCALIZADO"]],
       viz: function (st, S) { var W9 = C.width(st), box = el("svg", { viewBox: "0 0 " + W9 + " 150", role: "img", "aria-label": "Pesos dos trechos" }, st); liveAapc(box, S, W9); } },
 
     { t: "Margem de erro de cada trecho", // 10
@@ -181,7 +172,6 @@
       conta: function (S) { return "<div data-live='tt'></div>"; },
       tech: function (S) { return "<p>O p-valor do segmento vem de um teste t bicaudal, 2{1 − t<sub>d</sub>(|U|)}, com d = n* − 2(k + 1) graus de liberdade, onde n* exclui os pontos sobre joinpoints. Os erros padrão vêm de mínimos quadrados sem a restrição de continuidade, condicionados aos joinpoints estimados e sem os pontos sobre joinpoints. IC: 100·{exp(b ± s·t<sub>d</sub>⁻¹(1 − α/2)) − 1}.</p><p><b>Este p NÃO é o da permutação</b>: o manual diz que o p do teste t é menos exato por ser assintótico. Estatísticas de inclinação exigem pelo menos 3 observações por segmento, excluindo as sobre joinpoints.</p><p>O programa atual usa por padrão o intervalo por quantil empírico; este simulador mostra o IC t descrito no manual e <b>não</b> reproduz o quantil empírico. Segmentos curtos podem ter IC paramétrico “muito liberal”.</p>"; },
       q: "Por que o exemplo de 5 pontos não mostra p nem intervalo?", a: "Porque, com 5 pontos, cada trecho tem menos de 3 observações depois de retirar o ponto sobre a dobra, e o manual diz que o erro padrão e o p não podem ser calculados assim.",
-      src: [["51", "LIDO"], ["53–57", "LIDO"], ["59", "LIDO"], ["63", "LIDO"]],
       viz: function (st, S) { ciPlot(st, S); } },
 
     { t: "O que o Joinpoint não diz", // 11
@@ -190,7 +180,6 @@
       conta: function (S) { return "<ul><li>Mostra <b>quando</b> a tendência mudou.</li><li>Não mostra <b>por quê</b>.</li><li>O ano da dobra é um ano da série, não uma data exata.</li><li>Mudanças de sistema de informação e a pandemia aparecem como dobras, mas o método não as distingue de outras causas.</li></ul>"; },
       tech: function () { return "<p>O projeto pretende testar a hipótese de que a pandemia de COVID-19 e a mudança dos sistemas de informação representam quebras estruturais (projeto de pesquisa, seção 3.4). O Joinpoint não atribui causa; a interpretação é feita à parte. Por padrão os joinpoints só ocorrem em observações, e o resultado depende de MIN, MAX, restrições e semente.</p>"; },
       q: "Uma dobra em 2020 prova efeito da pandemia?", a: "Não. Mostra que a tendência mudou por volta daquele ano. Atribuir causa exige outra evidência.",
-      src: [["11", "LIDO"], ["33", "LIDO"], ["86", "LIDO"]],
       viz: function (st, S) { var c = new C.Chart(st, { xs: S.ser.anos, ymin: S.yr[0], ymax: S.yr[1], ystep: S.yr[2], ylabel: "cobertura (%)", h: 260, label: "Série com pontos de mudança" }); ch2(c, S); el("text", { x: c.m.l + 8, y: c.m.t + 22, "font-size": 16, "font-weight": 700 }, c.svg, "? por quê"); } }
   ];
 
