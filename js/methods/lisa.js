@@ -292,13 +292,13 @@
         var sel = -1, nbset = {};
         function msg(i) {
           if (!sg[i]) return NAMES[i] + (PEQ[i] ? " (denominador menor que 1.000)" : "") + ": não significativo neste critério (p = " + fp(pr.p[i], M) + ").";
-          var same = 0, n = NBQ.nb[i].length; NBQ.nb[i].forEach(function (j) { if (sg[j] && l.quad[j] === l.quad[i]) same++; });
-          return NAMES[i] + ": núcleo " + S.QUAD[l.quad[i]] + (PEQ[i] ? " (denominador menor que 1.000)" : "") + ". Dos " + n + " vizinhos (em âmbar), " + same + " também " + (same === 1 ? "é" : "são") + " significativo" + (same === 1 ? "" : "s") + " e da mesma cor; os outros " + (n - same) + " não passaram no teste.";
+          var same = 0, n = NBQ.nb[i].length; var sigN = 0; NBQ.nb[i].forEach(function (j) { if (sg[j]) sigN++; }); NBQ.nb[i].forEach(function (j) { if (sg[j] && l.quad[j] === l.quad[i]) same++; });
+          return NAMES[i] + ": núcleo " + S.QUAD[l.quad[i]] + (PEQ[i] ? " (denominador menor que 1.000)" : "") + ". Dos " + n + " vizinhos, " + sigN + " passaram no teste (mantêm a cor; " + same + " da mesma cor do núcleo) e " + (n - sigN) + " não passaram (em âmbar).";
         }
-        var mp = mapa(stage, { w: stage.clientWidth, onSel: function (i) { sel = i; nbset = {}; if (sg[i]) NBQ.nb[i].forEach(function (j) { nbset[j] = 1; }); mp.paths.forEach(function (q, j) { q.setAttribute("class", (nbset[j] ? "nbr" : cl(j)) + " clk" + (j === i ? " focus" : "")); }); inf.textContent = msg(i); }, cls: cl, label: "Mapa de aglomerados do Moran local com hachura nos municípios com denominador menor que 1.000", titles: function (i) { return S.QUAD[l.quad[i]] + "; " + D.nasc[i].toLocaleString("pt-BR") + " nascidos vivos (fictícios)"; } });
+        var mp = mapa(stage, { w: stage.clientWidth, onSel: function (i) { sel = i; nbset = {}; if (sg[i]) NBQ.nb[i].forEach(function (j) { nbset[j] = 1; }); mp.paths.forEach(function (q, j) { q.setAttribute("class", (nbset[j] && !sg[j] ? "nbr" : cl(j)) + " clk" + (j === i ? " focus" : "")); }); inf.textContent = msg(i); }, cls: cl, label: "Mapa de aglomerados do Moran local com hachura nos municípios com denominador menor que 1.000", titles: function (i) { return S.QUAD[l.quad[i]] + "; " + D.nasc[i].toLocaleString("pt-BR") + " nascidos vivos (fictícios)"; } });
         hachura(mp, PEQ);
         inf.textContent = "Clique em um município colorido (não cinza) para ver o entorno dele.";
-        stage.appendChild(legend(LEG5)); stage.appendChild(legend([["swhat", "listras: menos de 1.000 nascidos vivos (fictícios)"], ["swn", "vizinhos do município clicado"]])); aviso(stage);
+        stage.appendChild(legend(LEG5)); stage.appendChild(legend([["swhat", "listras: menos de 1.000 nascidos vivos (fictícios)"], ["swn", "vizinhos do município clicado que não passaram no teste"]])); aviso(stage);
         cap(stage, "Mapa do critério e do número de sorteios escolhidos acima. Os números de nascidos vivos também são fictícios.");
       } }
   ];
