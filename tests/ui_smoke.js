@@ -187,7 +187,7 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
     }
     await page.goto(url + "#encaixe/3"); await page.waitForTimeout(300);
     await page.click("svg.chain g.bx:nth-of-type(6)"); await page.waitForTimeout(500);
-    if (!/VIF, OLS e GWR/.test(await page.textContent("h1, h2, #view"))) { console.log(name, "encaixe: clique na caixa 6 não abriu o método"); bad++; }
+    if (!/VIF, OLS e GWR/.test(await page.textContent("#menu [aria-current=page]"))) { console.log(name, "encaixe: clique na caixa 6 não abriu o método"); bad++; }
     if (!(await page.evaluate(() => /gwr\/1$/.test(location.hash)))) { console.log(name, "encaixe: hash não foi para gwr/1"); bad++; }
     await page.goto(url + "#encaixe/2"); await page.waitForTimeout(300);
     await page.click(".opts button:text-is('4. I de Moran global')"); await page.waitForTimeout(500);
