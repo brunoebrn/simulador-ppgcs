@@ -286,3 +286,9 @@ svg .bar-warn { fill: var(--c2); stroke: var(--bg); stroke-width: 2; }
 
 @media (max-width: 599px) { .logo-slot.has { height: 44px; } }
 .logos { gap: 14px; }
+
+/* Logos: nunca cortar; altura fixa, largura proporcional */
+.logo-slot.has { height: auto; overflow: visible; display: flex; align-items: center; }
+.logo-slot.has img { height: 72px; width: auto; max-width: none; }
+#logo-ppgcs.has img { height: 58px; }
+@media (max-width: 599px) { .logo-slot.has img { height: 48px; } #logo-ppgcs.has img { height: 40px; } }
