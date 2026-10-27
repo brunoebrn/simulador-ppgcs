@@ -34,14 +34,37 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
       if (s3 <= 6 && s3 !== 4 && nm < 102) { console.log(name, "aede passo", s3, "mapa com", nm, "municípios"); bad++; }
       await page.screenshot({ path: `${out}/${name}-aede-passo${s3}.png`, fullPage: false });
     }
+    for (let s4 = 1; s4 <= 6; s4++) {
+      await page.goto(url + "#moran/" + s4); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(s4 === 4 ? 4500 : s4 === 3 ? 2500 : 1000);
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "moran passo", s4, "rolagem horizontal de", ov, "px"); bad++; }
+      const nm = await page.evaluate(() => document.querySelectorAll("svg.map path").length), want = [1, 3, 4, 6].includes(s4) ? 102 : 0;
+      if (nm < want) { console.log(name, "moran passo", s4, "mapa com", nm, "municípios"); bad++; }
+      const ctl = await page.evaluate(() => !!document.querySelector(".stage .mini")), anim = s4 === 3 || s4 === 4;
+      if (ctl !== anim) { console.log(name, "moran passo", s4, "controles de animação", ctl ? "presentes" : "ausentes", "(esperado", anim ? "presentes)" : "ausentes)"); bad++; }
+      if (s4 === 4) { const t = await page.textContent(".stage .sum"); if (!/Pronto/.test(t) || !/pseudo-p/.test(t)) { console.log(name, "moran passo 4: animação não terminou:", t); bad++; } }
+      if (s4 === 3) { const t = await page.textContent(".stage .sum"); if (!/Pronto/.test(t)) { console.log(name, "moran passo 3: animação não terminou:", t); bad++; } }
+      await page.screenshot({ path: `${out}/${name}-moran-passo${s4}.png`, fullPage: false });
+    }
+    await page.goto(url + "#moran/2"); await page.waitForTimeout(400);
+    for (const lab of ["1", "3", "5", "6"]) {
+      await page.click(`.opts button:text-is('${lab}')`); await page.waitForTimeout(500);
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "moran etapa", lab, "rolagem horizontal de", ov, "px"); bad++; }
+      await page.screenshot({ path: `${out}/${name}-moran-etapa-${lab[0]}.png`, fullPage: false });
+    }
+    const t5 = await page.textContent("[data-live=conta2]"); if (!/0,7035/.test(t5)) { console.log(name, "moran etapa 6: faltou I = 0,7035"); bad++; }
+    await page.goto(url + "#moran/4"); await page.waitForTimeout(300);
+    for (const mm of ["99", "9999", "999"]) { await page.click(`.opts button:text-is('${mm}')`); await page.waitForTimeout(mm === "9999" ? 3500 : mm === "99" ? 4000 : 3500); const t = await page.textContent(".stage .sum"); if (!/Pronto/.test(t)) { console.log(name, "moran M =", mm, "não terminou:", t); bad++; } }
+    await page.screenshot({ path: `${out}/${name}-moran-M999.png`, fullPage: false });
     await page.goto(url + "#aede/3"); await page.waitForTimeout(400); await page.evaluate(() => document.querySelectorAll("svg.map path.clk")[10].dispatchEvent(new MouseEvent("click", { bubbles: true }))); await page.waitForTimeout(200);
     if (!(await page.textContent("[aria-live=polite]")).match(/vizinhos/)) { console.log(name, "aede: clique no município não atualizou"); bad++; }
-    for (const m of ["joinpoint", "indicadores", "aede"]) {
+    for (const m of ["joinpoint", "indicadores", "aede", "moran"]) {
       await page.goto(url + "#" + m + "/1"); await page.waitForTimeout(300);
       await page.evaluate(() => document.querySelectorAll("details.more").forEach(d => { d.open = true; })); await page.waitForTimeout(300);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) { console.log(name, m, "seções abertas: rolagem horizontal de", ov, "px"); bad++; }
-      if (m === "joinpoint" || m === "aede") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
+      if (m === "joinpoint" || m === "aede" || m === "moran") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
     }
     const real = errs.filter(e => !/ERR_FILE_NOT_FOUND/.test(e)); errs.length = 0; errs.push(...real);
     if (errs.length) { console.log(name, "erros:", errs); bad++; }

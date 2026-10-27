@@ -239,3 +239,9 @@ svg .cell { fill: var(--c1); } svg .cell-sel { fill: var(--selc); }
 .aviso-fic { font-size: .85rem; color: var(--warn-ink); background: var(--warn-bg); border-left: 4px solid var(--warn-line); padding: 4px 8px; margin: 6px 6px 2px; border-radius: 0 6px 6px 0; max-width: none; }
 .scroll-box { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: var(--r); margin: 0 0 var(--gap); }
 .scroll-box table { margin: 0; }
+
+/* Método 4 (I de Moran global): contribuição por município e legendas */
+svg.map path.cp { fill: var(--ll); } svg.map path.cn { fill: var(--hl); }
+.legend .swcp { background: var(--ll); } .legend .swcn { background: var(--hl); }
+.legend .swobs { background: var(--c3); border-radius: 50%; } .legend .swband { background: var(--line); }
+.conta td.num { white-space: nowrap; }

@@ -77,5 +77,23 @@
     };
     this.svg = svg;
   }
-  NS.charts = { width: width, el: el, Chart: Chart, Histogram: Histogram, fmt: fmt, signed: signed };
+
+  /* Mapa SVG de Alagoas a partir da malha real (NS.geo, NS.spatial). Compartilhado pelos métodos espaciais.
+     o: { cls(i), label, onSel(i), onHover(i), titles(i), dots (lista booleana: marca centroides), w }.
+     Devolve { svg, paths, P, cs, g }. */
+  function mapa(parent, o) {
+    var S = NS.spatial, G = NS.geo.features, w = Math.max(280, Math.min(720, (o.w || parent.clientWidth || 640) - 8)), P = S.projector(G, w, 0, 4);
+    var svg = el("svg", { viewBox: "0 0 " + w + " " + P.height.toFixed(1), role: "img", "aria-label": o.label, "class": "map" }, parent), paths = [];
+    G.forEach(function (f, i) {
+      var p = el("path", { d: P.path(f), "class": o.cls(i) + (o.onSel ? " clk" : "") }, svg);
+      el("title", {}, p, f.properties.n + (o.titles ? ": " + o.titles(i) : ""));
+      if (o.onSel) p.addEventListener("click", function () { o.onSel(i); });
+      if (o.onHover) p.addEventListener("mouseenter", function () { o.onHover(i); });
+      paths.push(p);
+    });
+    var gx = el("g", {}, svg), cs = G.map(function (f, i) { return P.centroid(i); });
+    if (o.dots) cs.forEach(function (c, i) { if (o.dots[i]) el("circle", { cx: c[0].toFixed(1), cy: c[1].toFixed(1), r: 1.5, "class": "dot" }, gx); });
+    return { svg: svg, paths: paths, P: P, cs: cs, g: gx };
+  }
+  NS.charts = { width: width, el: el, Chart: Chart, Histogram: Histogram, fmt: fmt, signed: signed, mapa: mapa };
 })();

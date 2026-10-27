@@ -7,7 +7,7 @@ const SEED = +(process.argv[2] || 20261027), rnd = S.rng(SEED);
 const bb = [1e9, 1e9, -1e9, -1e9]; const C = geo.map(S.centroid);
 C.forEach(c => { bb[0] = Math.min(bb[0], c[0]); bb[1] = Math.min(bb[1], c[1]); bb[2] = Math.max(bb[2], c[0]); bb[3] = Math.max(bb[3], c[1]); });
 const gauss = (u, v, cu, cv, s) => Math.exp(-((u - cu) ** 2 + (v - cv) ** 2) / (2 * s * s));
-const nasc = [], cob = [], ab = [];
+const nasc = [], cob = [], ab = [], ruido = [], rnd2 = S.rng(SEED + 7);
 C.forEach((c, i) => {
   const u = (c[0] - bb[0]) / (bb[2] - bb[0]), v = (c[1] - bb[1]) / (bb[3] - bb[1]);
   const n = Math.round(Math.min(14000, Math.max(70, Math.exp(6.9 + 0.95 * S.normal(rnd)))));
@@ -17,16 +17,19 @@ C.forEach((c, i) => {
   cv = Math.min(128, Math.max(38, cv));
   let a = 6.5 - 0.22 * (cv - 93) + 0.5 * campo * -0.3 + (1.2 + 3 * Math.sqrt(500 / n)) * S.normal(rnd) * 0.8;
   a = Math.max(-4, Math.min(30, a));
+  ruido.push(Math.round((90 + 9 * S.normal(rnd2)) * 10) / 10);
   nasc.push(n); cob.push(Math.round(cv * 10) / 10); ab.push(Math.round(a * 10) / 10);
 });
 const out = `/* Dados FICTÍCIOS e fixos por município de Alagoas (valores sorteados por semente fixa, sem relação com os municípios reais).
    Gerado por tests/gen_spatial_data.js (semente ${SEED}). Ordem = ordem de js/geo_al.js (código IBGE crescente).
-   nasc = nascidos vivos fictícios (denominador); cob = cobertura vacinal fictícia (%); aband = taxa de abandono fictícia (%). */
+   nasc = nascidos vivos fictícios (denominador); cob = cobertura vacinal fictícia (%); aband = taxa de abandono fictícia (%);
+   ruido = índice fictício SEM padrão espacial (sorteio independente por município, gerador próprio), usado para mostrar um caso sem autocorrelação. */
 (function () { var NS = (window.PPGCS = window.PPGCS || {});
 NS.spatial_data = { semente: ${SEED}, codigos: ${JSON.stringify(geo.map(f => f.properties.c))},
 nasc: ${JSON.stringify(nasc)},
 cob: ${JSON.stringify(cob)},
-aband: ${JSON.stringify(ab)} };
+aband: ${JSON.stringify(ab)},
+ruido: ${JSON.stringify(ruido)} };
 })();
 `;
 fs.writeFileSync(path.join(__dirname, "../js/spatial_data.js"), out);

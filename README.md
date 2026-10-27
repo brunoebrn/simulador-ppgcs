@@ -3,7 +3,7 @@
 Site estático (HTML, CSS e JavaScript puros, sem build, sem CDN, funciona offline). Todos os dados são fictícios.
 
 ## Estado
-Entregue: método 2 (Regressão Joinpoint), para validação. Os demais métodos aparecem no menu como "em breve".
+Entregues: métodos 1 (Indicadores), 2 (Joinpoint), 3 (AEDE) e 4 (I de Moran global). Os demais aparecem no menu como "em breve".
 
 ## Publicar no GitHub Pages
 1. Crie um repositório no GitHub e envie o conteúdo desta pasta na raiz (index.html, css, js, fonts, assets, .nojekyll).

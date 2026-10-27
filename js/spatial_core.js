@@ -149,6 +149,19 @@
     return { I: obs.I, EI: obs.EI, M: M, R: R, p: (R + 1) / (M + 1), sims: sims, upper: upper, seed: seed };
   };
 
+  /* Teste exato por enumeração (só para n pequeno, até 8): percorre as n! permutações dos valores e conta as com I >= I observado
+     (ou <= , se o observado estiver abaixo de E[I]). Devolve { total, count, p = count/total, I }. A permutação identidade conta como uma delas. */
+  S.exactPerm = function (x, W) {
+    var obs = S.moranI(x, W), n = x.length, a = x.slice(), total = 0, count = 0, upper = obs.I >= obs.EI, tol = 1e-12;
+    (function rec(k) {
+      if (k === n) { total++; var I = S.moranI(a, W).I; if (upper ? I >= obs.I - tol : I <= obs.I + tol) count++; return; }
+      for (var i = k; i < n; i++) { var t = a[k]; a[k] = a[i]; a[i] = t; rec(k + 1); t = a[k]; a[k] = a[i]; a[i] = t; }
+    })(0);
+    return { I: obs.I, total: total, count: count, p: count / total, upper: upper };
+  };
+  /* Pseudo-p a partir de R e M, e rótulo de exibição: R = 0 nunca mostra p = 0. */
+  S.pseudoP = function (R, M) { return (R + 1) / (M + 1); };
+
   /* ---------- classificação ---------- */
   /* Quantil linear (tipo 7, igual ao padrão do numpy). */
   S.quantile = function (sorted, p) { var h = (sorted.length - 1) * p, lo = Math.floor(h), hi = Math.ceil(h); return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]); };

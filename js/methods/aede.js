@@ -23,21 +23,8 @@
   function info(stage) { var p = document.createElement("p"); p.className = "sum"; p.setAttribute("aria-live", "polite"); p.style.margin = "4px 6px"; stage.appendChild(p); return p; }
   function L(l) { return l.map(function (i) { return NAMES[i]; }).join(", "); }
 
-  /* Mapa SVG a partir da malha real. o: { parent, cls(i), label, onSel(i), dots, titles(i) }. */
-  function mapa(parent, o) {
-    var w = Math.max(280, Math.min(720, (o.w || parent.clientWidth || 640) - 8)), P = S.projector(G, w, 0, 4);
-    var svg = el("svg", { viewBox: "0 0 " + w + " " + P.height.toFixed(1), role: "img", "aria-label": o.label, "class": "map" }, parent), paths = [];
-    G.forEach(function (f, i) {
-      var p = el("path", { d: P.path(f), "class": o.cls(i) + (o.onSel ? " clk" : "") }, svg);
-      el("title", {}, p, NAMES[i] + (o.titles ? ": " + o.titles(i) : ""));
-      if (o.onSel) p.addEventListener("click", function () { o.onSel(i); });
-      if (o.onHover) p.addEventListener("mouseenter", function () { o.onHover(i); });
-      paths.push(p);
-    });
-    var gx = el("g", {}, svg), cs = G.map(function (f, i) { return P.centroid(i); });
-    if (o.dots) cs.forEach(function (c, i) { if (PEQ[i]) el("circle", { cx: c[0].toFixed(1), cy: c[1].toFixed(1), r: 1.5, "class": "dot" }, gx); });
-    return { svg: svg, paths: paths, P: P, cs: cs, g: gx };
-  }
+  /* Mapa SVG a partir da malha real: implementação compartilhada em NS.charts.mapa (js/charts.js). */
+  function mapa(parent, o) { o.dots = o.dots ? PEQ : null; return C.mapa(parent, o); }
   function setCls(m, i, c, extra) { m.paths[i].setAttribute("class", c + (extra || "")); }
   var PALMAP = { 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 3, 4] };
   function qcls(x, br) { return "q" + PALMAP[br.length + 1][S.classOf(x, br)]; }
