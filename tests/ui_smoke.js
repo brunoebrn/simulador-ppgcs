@@ -25,12 +25,23 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
       if (ov > 1) { console.log(name, "indicadores passo", s2, "rolagem horizontal de", ov, "px"); bad++; }
       if (s2 === 4 || s2 === 7) await page.screenshot({ path: `${out}/${name}-ind-passo${s2}.png` });
     }
-    for (const m of ["joinpoint", "indicadores"]) {
+    await page.goto(url + "#aede/1"); await page.waitForTimeout(500); await page.click("button:text-is('completo')");
+    for (let s3 = 1; s3 <= 7; s3++) {
+      await page.goto(url + "#aede/" + s3); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(s3 === 5 ? 3500 : 1200);
+      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (ov > 1) { console.log(name, "aede passo", s3, "rolagem horizontal de", ov, "px"); bad++; }
+      const nm = await page.evaluate(() => document.querySelectorAll("svg.map path").length);
+      if (s3 <= 6 && s3 !== 4 && nm < 102) { console.log(name, "aede passo", s3, "mapa com", nm, "municípios"); bad++; }
+      await page.screenshot({ path: `${out}/${name}-aede-passo${s3}.png`, fullPage: false });
+    }
+    await page.goto(url + "#aede/3"); await page.waitForTimeout(400); await page.evaluate(() => document.querySelectorAll("svg.map path.clk")[10].dispatchEvent(new MouseEvent("click", { bubbles: true }))); await page.waitForTimeout(200);
+    if (!(await page.textContent("[aria-live=polite]")).match(/vizinhos/)) { console.log(name, "aede: clique no município não atualizou"); bad++; }
+    for (const m of ["joinpoint", "indicadores", "aede"]) {
       await page.goto(url + "#" + m + "/1"); await page.waitForTimeout(300);
       await page.evaluate(() => document.querySelectorAll("details.more").forEach(d => { d.open = true; })); await page.waitForTimeout(300);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) { console.log(name, m, "seções abertas: rolagem horizontal de", ov, "px"); bad++; }
-      if (m === "joinpoint") await page.screenshot({ path: `${out}/${name}-saibamais.png`, fullPage: true });
+      if (m === "joinpoint" || m === "aede") await page.screenshot({ path: `${out}/${name}-${m}-saibamais.png`, fullPage: true });
     }
     const real = errs.filter(e => !/ERR_FILE_NOT_FOUND/.test(e)); errs.length = 0; errs.push(...real);
     if (errs.length) { console.log(name, "erros:", errs); bad++; }

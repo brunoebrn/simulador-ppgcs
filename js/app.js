@@ -134,7 +134,8 @@
   window.addEventListener("keydown", function (e) {
     if (!cur || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.target.getAttribute("role") === "tab") return;
     var n = cur.st.step || 1;
-    if (e.key === "ArrowRight" && n < cur.mt.steps) { e.preventDefault(); app.go(cur.st, n + 1); }
+    var tot = cur.mt.count ? cur.mt.count(cur.st) : cur.mt.steps;
+    if (e.key === "ArrowRight" && n < tot) { e.preventDefault(); app.go(cur.st, n + 1); }
     if (e.key === "ArrowLeft" && n > 1) { e.preventDefault(); app.go(cur.st, n - 1); }
   });
   sync(); route();

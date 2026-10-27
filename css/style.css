@@ -211,3 +211,31 @@ svg .ci-dot-zero { fill: var(--muted); stroke: var(--bg); stroke-width: 2; }
 .refs { padding-left: 1.2em; } .refs li { margin: 0 0 .6em; max-width: 72ch; }
 .top { background: var(--bg); }
 .stephead .stepno { flex: 0 0 auto; padding: 0 6px; }
+
+/* Mapas coropléticos e diagramas espaciais (métodos 3 a 7) */
+:root { --q0: #EAF1FA; --q1: #B9D4F0; --q2: #6FA8E8; --q3: #2B6CB0; --q4: #0B2A4A; --qe: #D9D5CC;
+  --hh: #B8344A; --lh: #9CC3EE; --ll: #1A5CA8; --hl: #E8A0AC; --nbr: #E3A008; --selc: #B8344A; }
+:root[data-theme="dark"] { --q0: #1B3358; --q1: #2F5A94; --q2: #4C8FDB; --q3: #9CC3EE; --q4: #E8EFF8; --qe: #5A5A52;
+  --hh: #D9546E; --lh: #6FA8E8; --ll: #2B6CB0; --hl: #8A3A4A; --nbr: #E3A008; --selc: #D9546E; }
+svg.map path { stroke: var(--bg); stroke-width: .6; stroke-linejoin: round; }
+svg.map path.q0 { fill: var(--q0); } svg.map path.q1 { fill: var(--q1); } svg.map path.q2 { fill: var(--q2); }
+svg.map path.q3 { fill: var(--q3); } svg.map path.q4 { fill: var(--q4); } svg.map path.qe { fill: var(--qe); }
+svg.map path.qd0 { fill: var(--hh); } svg.map path.qd1 { fill: var(--lh); } svg.map path.qd2 { fill: var(--ll); } svg.map path.qd3 { fill: var(--hl); }
+svg.map path.nbr { fill: var(--nbr); } svg.map path.selc { fill: var(--selc); }
+svg.map path.focus { stroke: var(--text); stroke-width: 1.8; }
+svg.map path.clk { cursor: pointer; }
+svg.map .lnk { stroke: var(--text); stroke-width: 1; opacity: .75; }
+svg.map .dot { fill: var(--text); opacity: .8; pointer-events: none; }
+svg .qd0 { fill: var(--hh); } svg .qd1 { fill: var(--lh); } svg .qd2 { fill: var(--ll); } svg .qd3 { fill: var(--hl); }
+svg .cell { fill: var(--c1); } svg .cell-sel { fill: var(--selc); }
+.maps2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 12px; }
+.maps2 > div { min-width: 0; }
+.legend .sq { border-radius: 3px; border: 1px solid var(--line); }
+.legend .sw0 { background: var(--q0); } .legend .sw1 { background: var(--q1); } .legend .sw2 { background: var(--q2); }
+.legend .sw3 { background: var(--q3); } .legend .sw4 { background: var(--q4); } .legend .swe { background: var(--qe); }
+.legend .swn { background: var(--nbr); } .legend .sws { background: var(--selc); }
+.legend .swq0 { background: var(--hh); } .legend .swq1 { background: var(--lh); } .legend .swq2 { background: var(--ll); } .legend .swq3 { background: var(--hl); }
+.opts select { font-size: .85rem; border: 1.5px solid var(--line); border-radius: 8px; padding: 3px 6px; min-height: 30px; background: var(--bg); color: var(--text); max-width: 190px; }
+.aviso-fic { font-size: .85rem; color: var(--warn-ink); background: var(--warn-bg); border-left: 4px solid var(--warn-line); padding: 4px 8px; margin: 6px 6px 2px; border-radius: 0 6px 6px 0; max-width: none; }
+.scroll-box { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: var(--r); margin: 0 0 var(--gap); }
+.scroll-box table { margin: 0; }
