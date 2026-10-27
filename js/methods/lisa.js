@@ -196,15 +196,15 @@
       viz: function (stage, ctl, state, root) {
         var v = state.v, l = LI(v), grid = document.createElement("div"); grid.className = "maps2"; stage.appendChild(grid);
         var a = document.createElement("div"), b = document.createElement("div"); grid.appendChild(a); grid.appendChild(b);
-        a.innerHTML = "<p class=cap>I local de cada município</p>"; b.innerHTML = "<p class=cap>Diagrama de Moran</p>";
+        a.innerHTML = "<p class=cap>Quadrante de cada município</p>"; b.innerHTML = "<p class=cap>Diagrama de Moran</p>";
         var br = S.quantileBreaks(l.I, 5), PAL = [0, 1, 2, 3, 4];
         if (state.sel == null) state.sel = topI(v);
         var dg = null, mp = null;
-        function pick(i) { state.sel = i; if (dg) dg.mark(i); if (mp) mp.paths.forEach(function (q, j) { q.setAttribute("class", "q" + PAL[S.classOf(l.I[j], br)] + " clk" + (j === i ? " focus" : "")); }); var c = root.querySelector("[data-live=conta3]"); if (c) c.innerHTML = STEPS[2].conta(state); }
-        mp = mapa(a, { w: a.clientWidth, onSel: pick, cls: function (i) { return "q" + PAL[S.classOf(l.I[i], br)]; }, label: "Mapa do I local de cada município, em cinco faixas", titles: function (i) { return "I = " + f2(l.I[i]); } });
+        function pick(i) { state.sel = i; if (dg) dg.mark(i); if (mp) mp.paths.forEach(function (q, j) { q.setAttribute("class", "qd" + l.quad[j] + " clk" + (j === i ? " focus" : "")); }); var c = root.querySelector("[data-live=conta3]"); if (c) c.innerHTML = STEPS[2].conta(state); }
+        mp = mapa(a, { w: a.clientWidth, onSel: pick, cls: function (i) { return "qd" + l.quad[i]; }, label: "Mapa de Alagoas colorido pelo quadrante de cada município", titles: function (i) { return S.QUAD[l.quad[i]] + "; I local = " + f2(l.I[i]); } });
         dg = diagrama(b, v, state, pick);
-        stage.appendChild(legend([["sw0", "I local menor"], ["sw2", "intermediário"], ["sw4", "I local maior"]])); stage.appendChild(legend([["swq0", "alto-alto"], ["swq2", "baixo-baixo"], ["swq1", "baixo-alto"], ["swq3", "alto-baixo"]])); aviso(stage);
-        cap(stage, "Mapa em cinco faixas de tamanho igual (quintis) do I local. No diagrama, a cor é o quadrante. Clique em um município para destacá-lo nos dois.");
+        stage.appendChild(legend([["swq0", "alto-alto"], ["swq2", "baixo-baixo"], ["swq1", "baixo-alto"], ["swq3", "alto-baixo"]])); aviso(stage);
+        cap(stage, "A cor é o quadrante do município, a mesma do diagrama. O valor do I local fica ao passar o mouse ou na conta abaixo: alto-alto e baixo-baixo têm I local positivo (parecido com os vizinhos), baixo-alto e alto-baixo têm I local negativo (diferente dos vizinhos). Este mapa ainda não diz se o resultado é significativo; isso vem nos passos seguintes. Clique em um município para destacá-lo nos dois.");
         pick(state.sel);
       } },
 
