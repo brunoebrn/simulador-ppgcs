@@ -9,31 +9,28 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
   for (const [w, h, name] of [[360, 740, "m360"], [390, 844, "m390"], [768, 1024, "t768"], [1280, 800, "d1280"]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } }), page = await ctx.newPage(), errs = [];
     page.on("console", m => { if (m.type() === "error") errs.push(m.text()); }); page.on("pageerror", e => errs.push(String(e)));
-    await page.goto(url + "#joinpoint/1"); await page.waitForTimeout(400);
+    await page.goto(url + "#joinpoint/1"); await page.waitForTimeout(400); await page.click("text=Roteiro completo");
     for (let s = 1; s <= 11; s++) {
       await page.goto(url + "#joinpoint/" + s); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(s === 6 ? 1500 : 900);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) { console.log(name, "passo", s, "rolagem horizontal de", ov, "px"); bad++; }
       if (s === 1 || s === 4 || s === 6 || s === 8 || s === 10) await page.screenshot({ path: `${out}/${name}-passo${s}.png`, fullPage: false });
     }
-    for (const tab of ["contexto", "dados", "resultado", "limites", "decisao", "fontes", "rodar"]) {
-      await page.goto(url + "#joinpoint/" + tab); await page.waitForTimeout(150);
-      const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-      if (ov > 1) { console.log(name, "aba", tab, "rolagem horizontal de", ov, "px"); bad++; }
-    }
     await page.goto(url + "#joinpoint/7"); await page.waitForTimeout(3500);
     await page.screenshot({ path: `${out}/${name}-passo7.png` });
-    await page.click("#b-tema"); await page.click("#b-banca"); await page.goto(url + "#joinpoint/6"); await page.waitForTimeout(800); await page.screenshot({ path: `${out}/${name}-escuro-banca.png` });
+    await page.click("#b-tema"); await page.goto(url + "#joinpoint/6"); await page.waitForTimeout(800); await page.screenshot({ path: `${out}/${name}-escuro-banca.png` });
     for (let s2 = 1; s2 <= 8; s2++) {
       await page.goto(url + "#indicadores/" + s2); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(900);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       if (ov > 1) { console.log(name, "indicadores passo", s2, "rolagem horizontal de", ov, "px"); bad++; }
       if (s2 === 4 || s2 === 7) await page.screenshot({ path: `${out}/${name}-ind-passo${s2}.png` });
     }
-    for (const tab of ["contexto", "dados", "resultado", "limites", "decisao", "fontes", "rodar"]) {
-      await page.goto(url + "#indicadores/" + tab); await page.waitForTimeout(150);
+    for (const m of ["joinpoint", "indicadores"]) {
+      await page.goto(url + "#" + m + "/1"); await page.waitForTimeout(300);
+      await page.evaluate(() => document.querySelectorAll("details.more").forEach(d => { d.open = true; })); await page.waitForTimeout(300);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-      if (ov > 1) { console.log(name, "indicadores aba", tab, "rolagem horizontal de", ov, "px"); bad++; }
+      if (ov > 1) { console.log(name, m, "seções abertas: rolagem horizontal de", ov, "px"); bad++; }
+      if (m === "joinpoint") await page.screenshot({ path: `${out}/${name}-saibamais.png`, fullPage: true });
     }
     const real = errs.filter(e => !/ERR_FILE_NOT_FOUND/.test(e)); errs.length = 0; errs.push(...real);
     if (errs.length) { console.log(name, "erros:", errs); bad++; }
