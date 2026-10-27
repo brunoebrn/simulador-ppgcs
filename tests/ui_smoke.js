@@ -9,7 +9,7 @@ const url = "file://" + path.resolve(__dirname, "../index.html");
   for (const [w, h, name] of [[360, 740, "m360"], [390, 844, "m390"], [768, 1024, "t768"], [1280, 800, "d1280"]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } }), page = await ctx.newPage(), errs = [];
     page.on("console", m => { if (m.type() === "error") errs.push(m.text()); }); page.on("pageerror", e => errs.push(String(e)));
-    await page.goto(url + "#joinpoint/1"); await page.waitForTimeout(400); await page.click("text=Roteiro completo");
+    await page.goto(url + "#joinpoint/1"); await page.waitForTimeout(400); await page.click("button:text-is('completo')");
     for (let s = 1; s <= 11; s++) {
       await page.goto(url + "#joinpoint/" + s); await page.evaluate(() => window.PPGCS.clock.setSpeed(8)); await page.waitForTimeout(s === 6 ? 1500 : 900);
       const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

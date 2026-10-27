@@ -17,7 +17,7 @@
   function safe(fn) { try { return fn(); } catch (e) { return null; } }
 
   var app = {
-    tech: function () { return flags.tech; },
+    tech: function () { return flags.tech; }, remount: function () { attachMini(); },
     go: function (state, n) { nav(state.id + "/" + n); }
   };
 
@@ -99,13 +99,13 @@
     step: '<svg viewBox="0 0 24 24"><path d="M6 5l9 7-9 7zM19 5v14"/></svg>', again: '<svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg>',
     open: '<svg viewBox="0 0 24 24"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg>', close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>'
   };
-  var miniOpen = safe(function () { return localStorage.getItem("ppgcs-mini") !== "0"; }); if (miniOpen === null) miniOpen = true;
+  var miniOpen = safe(function () { return localStorage.getItem("ppgcs-mini") === "1"; }); if (miniOpen === null) miniOpen = false;
   var minis = [];
   function fx(s) { return String(s).replace(".", ",") + "×"; }
   function ibtn(ic, label, fn) { var b = document.createElement("button"); b.type = "button"; b.innerHTML = ic; b.setAttribute("aria-label", label); b.title = label; b.addEventListener("click", fn); return b; }
   function buildMini(stage) {
     var bar = document.createElement("div"); bar.className = "mini"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", "Controles da simulação");
-    var tog = ibtn(ICON.open, "Mostrar ou ocultar controles", function () { miniOpen = !miniOpen; safe(function () { localStorage.setItem("ppgcs-mini", miniOpen ? "1" : "0"); }); minis.forEach(drawMini); });
+    var tog = ibtn(ICON.open, "Controles da animação (mostrar ou ocultar)", function () { miniOpen = !miniOpen; safe(function () { localStorage.setItem("ppgcs-mini", miniOpen ? "1" : "0"); }); minis.forEach(drawMini); });
     var pl = ibtn(ICON.pause, "Pausar", function () { clock.toggle(); });
     var st = ibtn(ICON.step, "Avançar um quadro", function () { clock.pause(); clock.stepFrame(); });
     var rs = ibtn(ICON.again, "Reiniciar", function () { clock.play(); clock.restart(); });
@@ -115,17 +115,17 @@
     rg.addEventListener("input", function () { clock.setSpeed(clock.speeds[+rg.value]); });
     sp.appendChild(rg); sp.appendChild(val);
     var o = { bar: bar, tog: tog, pl: pl, st: st, rs: rs, sp: sp, rg: rg, val: val }; minis.push(o);
-    [tog, pl, st, rs, sp].forEach(function (x) { bar.appendChild(x); }); drawMini(o);
+    tog.className = "tog"; [tog, pl, st, rs, sp].forEach(function (x) { bar.appendChild(x); }); drawMini(o);
     stage.insertBefore(bar, stage.firstChild); return o;
   }
   function drawMini(o) {
     o.bar.classList.toggle("closed", !miniOpen); o.tog.innerHTML = miniOpen ? ICON.close : ICON.open; o.tog.setAttribute("aria-expanded", String(miniOpen));
-    o.st.hidden = o.rs.hidden = o.sp.hidden = !miniOpen;
+    o.pl.hidden = o.st.hidden = o.rs.hidden = o.sp.hidden = !miniOpen;
     o.pl.innerHTML = clock.paused ? ICON.play : ICON.pause; o.pl.setAttribute("aria-label", clock.paused ? "Tocar" : "Pausar"); o.pl.title = o.pl.getAttribute("aria-label");
     var k = clock.speeds.indexOf(clock.speed); o.rg.value = k < 0 ? 2 : k; o.val.textContent = fx(clock.speed);
   }
   function sync() { minis = minis.filter(function (o) { return document.body.contains(o.bar); }); minis.forEach(drawMini); }
-  function attachMini() { minis = []; var stage = view.querySelector(".stage"); if (stage) buildMini(stage); }
+  function attachMini() { minis = []; var stage = view.querySelector(".stage"); if (stage && clock.active()) buildMini(stage); }
   clock.onChange(function (k) { if (k === "restart") rerender(); sync(); });
 
   var lastW = window.innerWidth, rt = 0;

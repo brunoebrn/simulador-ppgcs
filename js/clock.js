@@ -11,6 +11,7 @@
     speeds: [0.25, 0.5, 1, 2, 4, 8],
     add: function (t) { tasks.push(t); if (reduced && t.instantOnReduced) { t.finish && t.finish(); t.done = true; } kick(); return t; },
     clear: function () { tasks.length = 0; },
+    active: function () { return tasks.length > 0; },
     onChange: function (fn) { listeners.push(fn); },
     setSpeed: function (s) { clock.speed = s; emit(); },
     pause: function () { clock.paused = true; emit(); },

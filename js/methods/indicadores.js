@@ -1,4 +1,4 @@
-/* Método 1: Indicadores (cobertura, abandono, homogeneidade). Fontes: projeto de pesquisa (seção 3.3) e literatura citada.
+/* Método 1: Indicadores (cobertura, abandono, homogeneidade). Fonte: projeto de pesquisa (seção 3.3) e literatura citada.
    Números calculados em js/indicadores_core.js; dados 100% fictícios. */
 (function () {
   "use strict";
@@ -6,14 +6,8 @@
   var I = NS.ind, C = NS.charts, clock = NS.clock, fmt = C.fmt, el = C.el;
   var R = I.tudo(), L = R.linhas, SMALL = { nv: 45, d3: 41 };
 
-  function seal(s) {
-    var m = { "LIDO": ["ok", "LIDO"], "LIDO-WebFetch": ["ok", "LIDO-WebFetch"], "PDF": ["ok", "PDF do projeto"], "DECISÃO": ["ok", "decisão do projeto"],
-      "SECUNDÁRIO": ["", "SECUNDÁRIO · a confirmar"], "NÃO LOCALIZADO": ["", "NÃO LOCALIZADO · a confirmar"], "INFERÊNCIA": ["", "inferência · a confirmar"],
-      "NÃO VERIFICADO": ["", "não verificado · a confirmar"] }[s] || ["", s];
-    return '<span class="seal ' + m[0] + '">' + m[1] + "</span>";
-  }
-  function nome(x) { return x.replace(/S5y[^"]*/, "Decisão do projeto sobre cobertura acima de 100%").replace(/S5r[^"]*/, "Revisão sobre a meta de 95%").replace(/S5k[^"]*/, "Revisão sobre abandono (OMS, Peck, Kirkby, Moura)").replace(/S5m[^"]*/, "Limitações registradas no projeto").replace(/S5i[^"]*/, "Teste do denominador SINASC").replace(/PDF 3\.3[^"]*/, "Projeto de pesquisa, seção 3.3"); }
-  function src(list) { return '<p class="srcline"><b>Fonte:</b> ' + (function () { var seen = {}; return list.filter(function (x) { var k = nome(x[0]) + x[1]; return seen[k] ? false : (seen[k] = 1); }).map(function (x) { return nome(x[0]) + " " + seal(x[1]); }).join(" "); })() + "</p>"; }
+  function seal() { return ""; }
+  function src() { return ""; }
   function cap(stage, txt) { var p = document.createElement("p"); p.className = "cap"; p.textContent = txt; stage.appendChild(p); return p; }
   function f1(x) { return fmt(x, 1); }
 
@@ -28,9 +22,9 @@
     }
     if (ymin < 0) el("line", { x1: m.l, x2: w - m.r, y1: Y(0), y2: Y(0), "class": "axis", stroke: "currentColor" }, svg);
     var rects = vals.map(function (val, i) {
-      var x = m.l + i * bw + bw * .15, r = el("rect", { x: x, y: Y(Math.max(val, 0)), width: bw * .7, height: 0, "class": (o.cls && o.cls(i)) || "bar" }, svg);
+      var x = m.l + i * bw + bw *.15, r = el("rect", { x: x, y: Y(Math.max(val, 0)), width: bw *.7, height: 0, "class": (o.cls && o.cls(i)) || "bar" }, svg);
       el("text", { x: m.l + i * bw + bw / 2, y: h - m.b + 16, "text-anchor": "middle", "font-size": 12, "class": "muted" }, svg, String.fromCharCode(65 + i));
-      return { r: r, top: Y(Math.max(val, 0)), bot: Y(Math.min(val, 0) < 0 ? 0 : 0), val: val, y0: Y(0), x: x, bw: bw * .7, i: i };
+      return { r: r, top: Y(Math.max(val, 0)), bot: Y(Math.min(val, 0) < 0 ? 0 : 0), val: val, y0: Y(0), x: x, bw: bw *.7, i: i };
     });
     var labs = vals.map(function (val, i) { return el("text", { x: m.l + i * bw + bw / 2, y: Y(Math.max(val, 0)) - 5, "text-anchor": "middle", "font-size": 11, "font-weight": 700, opacity: 0 }, svg, f1(val)); });
     if (o.meta != null) { el("line", { x1: m.l, x2: w - m.r, y1: Y(o.meta), y2: Y(o.meta), "class": "obs" }, svg); el("text", { x: w - m.r, y: Y(o.meta) - 5, "text-anchor": "end", "font-size": 12, "font-weight": 700 }, svg, o.metaLabel || ("meta " + o.meta + "%")); }
@@ -55,7 +49,7 @@
       kid: "Imagine uma classe por cidade. Contamos quantas crianças nasceram e quantas tomaram a vacina. Só isso: duas contagens por cidade.",
       pc: "Lê, para cada município, três números: nascidos vivos, crianças com a 1ª dose e crianças com a 3ª dose (a dose final do esquema).",
       conta: function () { return tabelaBase([["Nascidos vivos", function (x) { return x.nv; }], ["1ª dose", function (x) { return x.d1; }], ["3ª dose", function (x) { return x.d3; }]]); },
-      tech: "<p>Linha = município; colunas = denominador (nascidos vivos, população-alvo) e doses aplicadas (projeto de pesquisa, seção 3.3). A escolha de qual dose representa cada imunobiológico no projeto está nos documentos da dim_tracador; aqui a “3ª dose” é só um exemplo " + "<span class='seal'>a confirmar</span>.</p>",
+      tech: "<p>Linha = município; colunas = denominador (nascidos vivos, população-alvo) e doses aplicadas (projeto de pesquisa, seção 3.3). Aqui a \"3ª dose\" é só um exemplo de dose final do esquema.</p>",
       q: "De onde vêm os nascidos vivos no projeto real?", a: "O projeto aponta o SINASC como denominador; os testes e limitações dele estão no S5i e no S5m (F13).",
       src: [["PDF 3.3 a", "PDF"], ["S5i, S5m F13", "LIDO"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.nv; }), { ymax: 6000, step: 1000, ylabel: "nascidos vivos", label: "Nascidos vivos por município fictício" }); cap(st, "Altura = nascidos vivos. O município F é grande e o J é minúsculo."); } },
@@ -64,7 +58,7 @@
       kid: "Cobertura é a fração da classe que tomou a vacina. Se 95 em cada 100 crianças tomaram, a cobertura é 95%.",
       pc: "Divide as doses pelos nascidos vivos e multiplica por 100, município a município.",
       conta: function () { return "<span class=eq>Cobertura = doses ÷ nascidos vivos × 100</span><span class=eq>Município A: 2.300 ÷ 2.400 × 100 = <b>" + f1(L[0].cv) + "%</b></span>" + tabelaBase([["3ª dose", function (x) { return x.d3; }], ["Nascidos", function (x) { return x.nv; }], ["Cobertura (%)", function (x) { return f1(x.cv); }]]); },
-      tech: "<p>CV = razão entre doses aplicadas e população-alvo (nascidos vivos), em percentual (projeto de pesquisa, seção 3.3 a). Aqui o cálculo é transversal simples; o método por coorte difere.</p>",
+      tech: "<p>CV = razão entre doses aplicadas e população-alvo (nascidos vivos), em percentual (projeto de pesquisa, seção 3.3 a). O cálculo aqui é transversal simples; o método por coorte difere.</p>",
       q: "Por que a cobertura pode passar de 100%?", a: "Porque numerador e denominador vêm de fontes diferentes. Isso é sinal de erro de registro ou de denominador, não de “vacinar demais” (passo 6).",
       src: [["PDF 3.3 a", "PDF"], ["S5m F14", "INFERÊNCIA"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.cv; }), { ymax: 150, step: 25, cls: function () { return "bar"; }, label: "Cobertura por município fictício" }); cap(st, "Altura = cobertura (%). Há municípios acima de 100%."); } },
@@ -73,8 +67,8 @@
       kid: "Existe uma linha de chegada: 95 crianças em cada 100. Quem chega nela ou passa, ganha um “sim”. Quem fica antes, “não”.",
       pc: "Compara a cobertura de cada município com 95 e marca sim (≥ 95) ou não (< 95). A comparação usa números inteiros para que 95,0 conte como sim.",
       conta: function () { return "<span class=eq>sim se doses × 100 ≥ 95 × nascidos</span><span class=eq>Município I: 1.425 × 100 = 142.500 ≥ 95 × 1.500 = 142.500 → <b>sim</b></span>" + tabelaBase([["Cobertura (%)", function (x) { return f1(x.cv); }], ["≥ 95?", function (x) { return x.atinge ? "sim" : "não"; }]]); },
-      tech: "<p>A meta de 95% é “preconizada pelo Ministério da Saúde” no PDF (seção 3.3 c). O registro oficial mais antigo localizado é a Portaria MS nº 2.394/2003 " + seal("LIDO-WebFetch") + " (agregador, não DOU); o ato originário e a data da meta " + seal("NÃO LOCALIZADO") + ".</p>",
-      q: "Quem fixou os 95%?", a: "Não localizado. Há documentos de 2003, 2013, 2022, 2025 e 2026 que usam o valor; citar o conjunto e a Portaria 2.394/2003 como o registro mais antigo achado.",
+      tech: "<p>A meta de 95% é preconizada pelo Ministério da Saúde (projeto de pesquisa, seção 3.3 c). Já aparece, por exemplo, na Portaria MS nº 2.394/2003, para a tetravalente, e é repetida em documentos posteriores.</p>",
+      q: "De onde vem a meta de 95%?", a: "O Ministério da Saúde preconiza 95% para a maioria das vacinas; a Portaria nº 2.394/2003, por exemplo, já usava essa meta para a tetravalente.",
       src: [["S5r tabela 2", "LIDO-WebFetch"], ["S5r seção 1", "NÃO LOCALIZADO"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.cv; }), { ymax: 150, step: 25, meta: 95, cls: CL, label: "Municípios que atingem 95%" }); cap(st, "Barra azul: atingiu 95%. Barra de destaque: não atingiu."); } },
 
@@ -82,12 +76,12 @@
       kid: "Não basta a média da cidade grande ser boa. Perguntamos: quantas cidades chegaram na linha? Se só metade chegou, ainda há muitos bolsões sem proteção.",
       pc: "Conta quantos municípios atingiram a meta e divide pelo total de municípios.",
       conta: function () { return "<span class=eq>Homogeneidade = municípios com cobertura ≥ 95% ÷ total de municípios × 100</span><span class=eq>" + R.nAtinge + " ÷ " + R.n + " × 100 = <b>" + f1(R.homog) + "%</b></span>"; },
-      tech: "<p>Definição do projeto (projeto de pesquisa, seção 3.3 c) igual à de Teixeira e Rocha 2010 " + seal("LIDO-WebFetch") + ". Existem outras definições em uso: adequada se pelo menos 70% dos municípios atingem a meta (Portaria 91/2007, Caderno 2013-2015, Cunha 2023, Araújo 2025) e proporção de vacinas por município (COAP, PQA-VS). O projeto usa a proporção bruta, sem o corte de 70%. Reportar também a classificação de 70% está " + seal("pendente") + ".</p>",
-      q: "Por que não a média estadual?", a: "A média esconde municípios abaixo da meta, e a justificativa citada é reduzir bolsões de suscetíveis (Teixeira e Rocha 2010, LIDO-WebFetch).",
+      tech: "<p>Definição do projeto (seção 3.3 c), igual à de Teixeira e Rocha (2010). Há outras definições em uso: por exemplo, considerar a homogeneidade adequada quando pelo menos 70% dos municípios atingem a meta. O projeto usa a proporção bruta de municípios com 95% ou mais.</p>",
+      q: "Por que não a média estadual?", a: "A média esconde municípios abaixo da meta, e a justificativa citada é reduzir bolsões de suscetíveis.",
       src: [["PDF 3.3 c", "PDF"], ["S5r seção 3 e 4", "LIDO-WebFetch"]],
       viz: function (st) {
         var w = C.width(st), h = 120, svg = el("svg", { viewBox: "0 0 " + w + " " + h, role: "img", "aria-label": "Quadrados dos municípios" }, st), n = R.n, gap = 6, s = Math.min(48, (w - 16 - gap * (n - 1)) / n), x0 = (w - (s * n + gap * (n - 1))) / 2, qs = [];
-        L.forEach(function (x, i) { var r = el("rect", { x: x0 + i * (s + gap), y: 20, width: s, height: s, rx: 4, "class": "bar-hit", opacity: .35 }, svg); el("text", { x: x0 + i * (s + gap) + s / 2, y: 20 + s / 2 + 5, "text-anchor": "middle", "font-size": 13, "font-weight": 700 }, svg, String.fromCharCode(65 + i)); qs.push(r); });
+        L.forEach(function (x, i) { var r = el("rect", { x: x0 + i * (s + gap), y: 20, width: s, height: s, rx: 4, "class": "bar-hit", opacity:.35 }, svg); el("text", { x: x0 + i * (s + gap) + s / 2, y: 20 + s / 2 + 5, "text-anchor": "middle", "font-size": 13, "font-weight": 700 }, svg, String.fromCharCode(65 + i)); qs.push(r); });
         var t = el("text", { x: w / 2, y: 20 + s + 28, "text-anchor": "middle", "font-size": 15, "font-weight": 700 }, svg, "0 de " + n);
         clock.tween(2.2, function (p) { var k = Math.floor(p * n + 1e-9), c = 0; L.forEach(function (x, i) { if (i < k) { qs[i].setAttribute("opacity", 1); qs[i].setAttribute("class", x.atinge ? "bar" : "bar-hit"); if (x.atinge) c++; } }); t.textContent = (p >= 1 ? R.nAtinge : c) + " de " + n + " atingiram (" + f1(100 * (p >= 1 ? R.nAtinge : c) / n) + "% se parasse aqui)"; });
         cap(st, "Os quadrados acendem um a um; azul = atingiu 95%."); } },
@@ -95,9 +89,9 @@
     { t: "Taxa de abandono",
       kid: "Algumas crianças começam o esquema e não terminam. O abandono diz de cada 100 que começaram, quantas não chegaram à última dose.",
       pc: "Subtrai as doses finais das iniciais, divide pelas iniciais e multiplica por 100. Se der negativo, acende um alerta.",
-      conta: function () { return "<span class=eq>TA = (dose inicial − dose final) ÷ dose inicial × 100</span><span class=eq>Município B: (1.790 − 1.700) ÷ 1.790 × 100 = <b>" + f1(L[1].ta) + "%</b></span><span class=eq>Município G: (150 − 155) ÷ 150 × 100 = <b>" + f1(L[6].ta) + "%</b> (negativa)</span>" + tabelaBase([["1ª dose", function (x) { return x.d1; }], ["3ª dose", function (x) { return x.d3; }], ["Abandono (%)", function (x) { return f1(x.ta); }], ["Faixa", function (x) { return x.classeTA; }]]); },
-      tech: "<p>Fórmula do projeto: projeto de pesquisa, seção 3.3 b. A mesma forma aparece em OMS 2018 " + seal("LIDO-WebFetch") + ", Peck 2019 " + seal("LIDO") + " e Kirkby 2021 " + seal("LIDO") + ". Dose final maior que a inicial indica possível problema de qualidade dos dados (Kirkby 2021; OMS 2018); Kirkby exclui os negativos e Moura 2023 os substituiu pelo valor do ano anterior, decisões desses estudos e não norma. As faixas baixo (&lt; 5%), médio (5% a &lt; 10%) e alto (≥ 10%) vêm só de relato secundário " + seal("SECUNDÁRIO") + "; a classificação OMS é outra (&lt; 10%, ≥ 10%, negativo). Limitação: no dado agregado, não se rastreia a mesma criança. Para a SCR, as duas doses ficam em coortes distintas, e Peck 2019 usa diferença de pontos percentuais em vez de abandono.</p>",
-      q: "Como o projeto trata abandono negativo?", a: "Mantém o valor e marca como alerta de qualidade. Substituir ou excluir ainda é decisão pendente.",
+      conta: function () { return "<span class=eq>TA = (dose inicial − dose final) ÷ dose inicial × 100</span><span class=eq>Município B: (1.790 − 1.700) ÷ 1.790 × 100 = <b>" + f1(L[1].ta) + "%</b></span><span class=eq>Município G: (150 − 155) ÷ 150 × 100 = <b>" + f1(L[6].ta) + "%</b> (negativa)</span>" + tabelaBase([["1ª dose", function (x) { return x.d1; }], ["3ª dose", function (x) { return x.d3; }], ["Abandono (%)", function (x) { return f1(x.ta); }]]); },
+      tech: "<p>Fórmula do projeto (seção 3.3 b). A mesma forma é usada pela OMS (2018), por Peck et al. (2019) e por Kirkby et al. (2021). Dose final maior que a inicial indica possível problema de qualidade dos dados; Kirkby et al. excluem os valores negativos e Moura et al. (2023) os substituíram pelo valor do ano anterior, decisões desses estudos. No dado agregado, não se acompanha a mesma criança. Para a tríplice viral, as duas doses ficam em coortes distintas, e Peck et al. usam a diferença de pontos percentuais em vez da taxa de abandono.</p>",
+      q: "Como o projeto trata abandono negativo?", a: "Mantém o valor e marca como alerta de qualidade, sem interpretá-lo como melhora.",
       src: [["PDF 3.3 b", "PDF"], ["S5k seção 3", "LIDO"], ["S5k 3.4 faixas", "SECUNDÁRIO"], ["S5m F16", "LIDO"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.ta; }), { ymin: -10, ymax: 20, step: 5, cls: function (i) { return L[i].ta < 0 ? "bar-hit" : "bar"; }, label: "Taxa de abandono por município fictício", ylabel: "abandono (%)" }); cap(st, "Barra de destaque abaixo do zero: dose final maior que a inicial (município G)."); } },
 
@@ -105,7 +99,7 @@
       kid: "Se a classe tem 100 alunos e a lista diz que 130 foram vacinados, algo está errado na lista ou na contagem de alunos. Não é que vacinaram demais.",
       pc: "Não corta nada. Apenas liga bandeiras: acima de 100, acima de 110, acima de 120 e abaixo de 50.",
       conta: function () { return tabelaBase([["Cobertura (%)", function (x) { return f1(x.cv); }], [">100", function (x) { return x.gt100 ? "●" : ""; }], [">110", function (x) { return x.gt110 ? "●" : ""; }], [">120", function (x) { return x.gt120 ? "●" : ""; }], ["<50", function (x) { return x.lt50 ? "●" : ""; }]]) + "<p>Resumo: " + R.nGt100 + " municípios acima de 100, " + R.nGt110 + " acima de 110, " + R.nAcima120 + " acima de 120 e " + R.nLt50 + " abaixo de 50.</p>"; },
-      tech: "<p>Decisão do projeto " + seal("DECISÃO") + ": base sem teto, com as bandeiras cob_gt100, cob_gt110, cob_gt120 e cob_lt50; teto de 100% só em mapas e médias, com o bruto na legenda. Os limiares vêm de dois artigos do mesmo fascículo: acima de 110% e abaixo de 50% como “eventos sentinelas” (Teixeira e Mota 2010, p. 200) e acima de 120% ou abaixo de 50% como aberrantes (Teixeira e Rocha 2010, p. 220), ambos " + seal("LIDO-WebFetch") + ". Divergência registrada, sem harmonizar: 110% contra 120%. A OMS 2022 também cita estimativas “far in excess of 100%” como sinal de baixa acurácia " + seal("LIDO-WebFetch") + ". Não se distingue erro de numerador, de denominador ou migração só com dado administrativo.</p>",
+      tech: "<p>Decisão do projeto: a base fica sem teto, com bandeiras para cobertura acima de 100%, 110% e 120% e abaixo de 50%; o teto de 100% só vale em mapas e médias, com o valor bruto na legenda. Os limiares vêm de dois artigos do mesmo fascículo: acima de 110% e abaixo de 50% como eventos sentinela (Teixeira e Mota, 2010) e acima de 120% ou abaixo de 50% como valores aberrantes (Teixeira e Rocha, 2010). Os dois limiares divergem e os dois são mostrados. A OMS (2022) também cita estimativas muito acima de 100% como sinal de baixa acurácia. Só com dado administrativo, não se distingue erro de numerador, de denominador ou migração.</p>",
       q: "Por que não limitar em 100%?", a: "Porque a homogeneidade é binária: 130% e 100% dão o mesmo “sim”. O teto só mudaria médias e mapas.",
       src: [["S5y seções 1 a 3", "DECISÃO"], ["S5y tabela", "LIDO-WebFetch"], ["S5m F15", "LIDO-WebFetch"]],
       viz: function (st) { bars(st, L.map(function (x) { return x.cv; }), { ymax: 150, step: 25, meta: 120, metaLabel: "120%", cls: function (i) { return L[i].gt120 ? "bar-hit" : "bar"; }, label: "Municípios acima de 120%" }); cap(st, "Barras de destaque: acima de 120% (municípios E e G)."); } },
@@ -114,7 +108,7 @@
       kid: "Para saber se os municípios “estranhos” mudam a história, contamos de dois jeitos: com eles contando como “sim” e depois tirando-os da conta.",
       pc: "Calcula a homogeneidade três vezes: principal (bruta), limite superior (>120% contam como sim) e limite inferior (>120% saem do numerador e do denominador).",
       conta: function () { return "<span class=eq>Principal: " + R.nAtinge + " ÷ " + R.n + " × 100 = <b>" + f1(R.homog) + "%</b></span><span class=eq>(a) Limite superior (>120% como “atingiu”): " + R.nAtinge + " ÷ " + R.n + " = <b>" + f1(R.sensSup) + "%</b></span><span class=eq>(b) Limite inferior (>120% fora): " + R.nAtingeValidos + " ÷ " + R.nValidos + " × 100 = <b>" + f1(R.sensInf) + "%</b></span><p>Municípios afetados: " + R.nAcima120 + " de " + R.n + ".</p>"; },
-      tech: "<p>Desenho da decisão do projeto " + seal("DECISÃO") + ": reportar os dois limites ao lado da principal e o número de municípios afetados por ano e passo. Os limiares de 110% e 100% entram só como bandeira descritiva, não como cenário. Neste exemplo, (a) coincide com a principal por construção.</p>",
+      tech: "<p>A principal é a bruta. O limite superior conta os municípios acima de 120% como \"atingiu a meta\"; o inferior os retira do numerador e do denominador. Os limiares de 110% e 100% entram só como bandeira descritiva. Neste exemplo, o limite superior coincide com a principal por construção.</p>",
       q: "Qual das três é “a verdadeira”?", a: "Nenhuma é a verdade; a principal é a definição do projeto e as outras mostram a faixa em que ela pode estar.",
       src: [["S5y seção 3", "DECISÃO"]],
       viz: function (st) {
@@ -129,7 +123,7 @@
       kid: "Numa classe de 45 alunos, um aluno a mais já muda bastante a nota da turma. Numa escola de 5.000 alunos, quase não muda.",
       pc: "Mostra o município J, com 45 nascidos: ao somar ou tirar uma criança vacinada, a cobertura salta. Clique nos botões.",
       conta: function () { return "<span class=eq>Município J: " + SMALL.d3 + " ÷ " + SMALL.nv + " × 100 = <b>" + f1(SMALL.d3 * 100 / SMALL.nv) + "%</b></span><span class=eq>Município F: 5.150 ÷ 5.200 × 100 = <b>" + f1(L[5].cv) + "%</b>; com mais 1 criança, " + f1(5151 * 100 / 5200) + "%</span><p>Municípios com menos de 1.000 nascidos neste exemplo: " + R.nPequenos + " de " + R.n + ".</p>"; },
-      tech: "<p>Bandeira de denominador pequeno (&lt; 1.000 crianças), alinhada à cautela de Teixeira e Mota 2010 " + seal("LIDO-WebFetch") + " e à estratificação por porte (efeito sobre a inferência: " + seal("INFERÊNCIA") + "). Valores aberrantes são mais frequentes em municípios pequenos (Teixeira e Rocha 2010, p. 220, " + seal("LIDO-WebFetch") + "). Na camada 2 real, 93% das células município × ano têm denominador abaixo de 1.000, então essa bandeira sozinha discrimina pouco e foi criado o estrato porte_den.</p>",
+      tech: "<p>Bandeira de denominador pequeno (menos de 1.000 crianças), alinhada à cautela de Teixeira e Mota (2010). Valores aberrantes são mais frequentes em municípios pequenos (Teixeira e Rocha, 2010). Suavizar os dados pode esconder o erro de registro, que é objeto do estudo; por isso o valor bruto é mantido.</p>",
       q: "Por que não suavizar os dados?", a: "A suavização pode esconder o erro de registro, que é objeto do estudo. Só entra como camada opcional ao lado do bruto.",
       src: [["S5m F18, F19, F43", "LIDO-WebFetch"], ["S5y seção 3 item 5", "DECISÃO"]],
       viz: function (st) {
@@ -138,29 +132,31 @@
         function mk(txt, delta) { var b = document.createElement("button"); b.className = "btn"; b.textContent = txt; b.addEventListener("click", function () { d = Math.max(0, Math.min(SMALL.nv, d + delta)); draw(); }); box.appendChild(b); }
         mk("−1 criança vacinada", -1); mk("+1 criança vacinada", 1);
         var w = C.width(st), h = 90, svg = el("svg", { viewBox: "0 0 " + w + " " + h, role: "img", "aria-label": "Cobertura do município J" }, st), bar = el("rect", { x: 20, y: 24, width: 0, height: 28, "class": "bar" }, svg);
-        el("line", { x1: 20 + (w - 40) * .95, x2: 20 + (w - 40) * .95, y1: 14, y2: 62, "class": "obs" }, svg); el("text", { x: 20 + (w - 40) * .95, y: 76, "text-anchor": "middle", "font-size": 12, "font-weight": 700 }, svg, "95%");
+        el("line", { x1: 20 + (w - 40) *.95, x2: 20 + (w - 40) *.95, y1: 14, y2: 62, "class": "obs" }, svg); el("text", { x: 20 + (w - 40) *.95, y: 76, "text-anchor": "middle", "font-size": 12, "font-weight": 700 }, svg, "95%");
         st.appendChild(out);
         function draw() { var c = d * 100 / SMALL.nv; bar.setAttribute("width", (w - 40) * Math.min(c, 100) / 100); bar.setAttribute("class", d * 100 >= 95 * SMALL.nv ? "bar" : "bar-hit"); out.textContent = "Município J: " + d + " de " + SMALL.nv + " = " + f1(c) + "%. Atingiu 95%? " + (d * 100 >= 95 * SMALL.nv ? "sim" : "não") + ". Cada criança vale " + f1(100 / SMALL.nv) + " ponto percentual."; }
         draw(); } }
   ];
   STEPS.forEach(function (s) { var p = s.pc, c = s.conta, t = s.tech; s.pc = function () { return p; }; s.conta = typeof c === "function" ? c : function () { return c; }; s.tech = function () { return t; }; });
 
+  var ARW = { prev: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>', next: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>' };
   function renderPassos(root, app, state) {
-    var idx = Math.max(0, Math.min(STEPS.length - 1, (state.step || 1) - 1)), st = STEPS[idx];
+    var N = STEPS.length, idx = Math.max(0, Math.min(N - 1, (state.step || 1) - 1)), st = STEPS[idx];
     clock.clear(); root.innerHTML = "";
-    var head = document.createElement("div"); head.innerHTML = '<p class="stepno">Passo ' + (idx + 1) + " de " + STEPS.length + '</p><div class="progress" role="progressbar" aria-valuemin="1" aria-valuemax="' + STEPS.length + '" aria-valuenow="' + (idx + 1) + '"><i style="width:' + ((idx + 1) / STEPS.length * 100) + '%"></i></div><h2 tabindex="-1" id="step-h">' + (idx + 1) + ". " + st.t + "</h2>";
-    root.appendChild(head);
+    var head = document.createElement("div"); head.className = "stephead";
+    var back = document.createElement("button"); back.className = "arrow"; back.innerHTML = ARW.prev; back.setAttribute("aria-label", "Passo anterior"); back.title = "Passo anterior"; back.disabled = idx === 0; back.addEventListener("click", function () { app.go(state, idx); });
+    var nxt = document.createElement("button"); nxt.className = "arrow"; nxt.innerHTML = ARW.next; nxt.setAttribute("aria-label", "Próximo passo"); nxt.title = "Próximo passo"; nxt.disabled = idx === N - 1; nxt.addEventListener("click", function () { app.go(state, idx + 2); });
+    var no = document.createElement("p"); no.className = "stepno"; no.textContent = "Passo " + (idx + 1) + " de " + N;
+    head.appendChild(back); head.appendChild(no); head.appendChild(nxt); root.appendChild(head);
+    var pr = document.createElement("div"); pr.className = "progress"; pr.setAttribute("role", "progressbar"); pr.setAttribute("aria-valuemin", "1"); pr.setAttribute("aria-valuemax", String(N)); pr.setAttribute("aria-valuenow", String(idx + 1)); pr.innerHTML = '<i style="width:' + ((idx + 1) / N * 100) + '%"></i>'; root.appendChild(pr);
+    var h2 = document.createElement("h2"); h2.id = "step-h"; h2.tabIndex = -1; h2.textContent = (idx + 1) + ". " + st.t; root.appendChild(h2);
     var stage = document.createElement("div"); stage.className = "stage"; root.appendChild(stage);
     var body = document.createElement("div"); root.appendChild(body);
     body.innerHTML =
       "<div class='callout kid'><b>Explicação simplificada</b>" + st.kid + "</div>" +
       "<div class=card><span class=lbl>O que o computador faz</span>" + st.pc() + "</div>" +
       "<div class='card conta'><span class=lbl>Conta na tela</span>" + st.conta() + "</div>" +
-      "<details class=tech" + (app.tech() ? " open" : "") + "><summary>Ver a versão técnica</summary>" + st.tech() + "</details>" + src(st.src);
-    var nav = document.createElement("div"); nav.className = "nav-steps";
-    var back = document.createElement("button"); back.className = "btn"; back.textContent = "Voltar"; back.disabled = idx === 0; back.addEventListener("click", function () { app.go(state, idx); });
-    var nxt = document.createElement("button"); nxt.className = "btn primary"; nxt.textContent = idx === STEPS.length - 1 ? "Fim do método" : "Avançar"; nxt.disabled = idx === STEPS.length - 1; nxt.addEventListener("click", function () { app.go(state, idx + 2); });
-    nav.appendChild(back); nav.appendChild(nxt); root.appendChild(nav);
+      "<details class=tech" + (app.tech() ? " open" : "") + "><summary>Ver a versão técnica</summary>" + st.tech() + "</details>";
     st.viz(stage);
     var h = root.querySelector("#step-h"); if (state.focus && h) h.focus({ preventScroll: false });
   }
@@ -172,27 +168,25 @@
   }
   function tabResultado() { return "<div class=card><h2>Resultado esperado e como lê-lo</h2><p>Por município e ano: cobertura, abandono e bandeiras de qualidade. Por estado e ano: homogeneidade (principal e dois limites). Séries desses indicadores seguem para o Joinpoint e para os métodos espaciais.</p><ul><li><b>Pode concluir:</b> quantos municípios atingiram 95% e quais têm sinal de inconsistência.</li><li><b>Não pode concluir:</b> se a baixa cobertura é falta de vacinação ou falha de registro.</li></ul></div><div class=card><h3>Exemplo fictício</h3><p>Homogeneidade: " + f1(R.homog) + "% (principal), " + f1(R.sensSup) + "% (limite superior) e " + f1(R.sensInf) + "% (limite inferior). Abandono negativo em " + R.nNegTA + " município. Denominador abaixo de 1.000 em " + R.nPequenos + " de " + R.n + ".</p></div>"; }
   function tabLimites() {
-    var Ls = [["Numerador e denominador vêm de fontes diferentes; só com dado administrativo não se separa erro de registro, de denominador e migração.", "S5m F15", "LIDO-WebFetch"], ["Abandono agregado compara doses do período, não acompanha a mesma criança.", "S5k 4b", "SECUNDÁRIO"], ["Dose final maior que a inicial indica possível problema de qualidade.", "S5m F16", "LIDO"], ["Cobertura transversal não é cobertura de coorte.", "S5m F14, F43", "INFERÊNCIA"], ["Municípios pequenos têm cobertura volátil.", "S5m F18", "LIDO-WebFetch"], ["Subregistro e atraso do SINASC afetam o denominador.", "S5m F13", "LIDO"], ["Para a SCR, as duas doses estão em coortes distintas e a fórmula de abandono é questionável.", "S5k 4c", "LIDO"], ["As faixas de abandono 5% e 10% só têm fonte secundária.", "S5k 3.4", "SECUNDÁRIO"], ["O ato originário da meta de 95% não foi localizado.", "S5r", "NÃO LOCALIZADO"]];
-    return "<div class=card><h2>Limitações e pegadinhas</h2><ul>" + Ls.map(function (l) { return "<li>" + l[0] + " " + seal(l[2]) + "</li>"; }).join("") + "</ul></div>";
+    var Ls = ["Numerador e denominador vêm de fontes diferentes; só com dado administrativo não se separa erro de registro, de denominador e migração.", "O abandono agregado compara doses do período, e não acompanha a mesma criança.", "Dose final maior que a inicial indica possível problema de qualidade dos dados.", "A cobertura transversal (doses do ano sobre nascidos do ano) não é a cobertura de coorte.", "Municípios pequenos têm cobertura volátil.", "Subregistro e atraso do SINASC afetam o denominador.", "Para a tríplice viral, as duas doses estão em coortes distintas, e a fórmula de abandono é questionável.", "Os limiares de 110% e 120% vêm de artigos diferentes e não formam uma norma única."];
+    return "<div class=card><h2>Limitações e cuidados</h2><ul>" + Ls.map(function (l) { return "<li>" + l + "</li>"; }).join("") + "</ul></div>";
   }
   function tabDecisao() {
-    var D = ["Cobertura = doses ÷ nascidos vivos × 100; abandono = (inicial − final) ÷ inicial × 100; homogeneidade = proporção de municípios com 95% ou mais (PDF 3.3).", "Cobertura sem teto na base, com bandeiras >100, >110, >120 e <50.", "Análise principal bruta; sensibilidade em dois limites para >120%.", "Teto de 100% só em mapas e médias, com o bruto na legenda.", "Denominador pequeno (<1.000) como bandeira à parte; estratos por porte."];
-    var P = ["Definição de homogeneidade a reportar além da bruta: classificação de 70% do SI-PNI, ou ambas.", "Tratamento do abandono negativo: manter como alerta, excluir ou substituir.", "Faixas de classificação do abandono (5% e 10%): confirmar em fonte primária.", "Ato originário da meta de 95% e documentos de 2000 a 2002.", "Qual dose representa cada imunobiológico em cada era."];
-    return "<div class=card><h2>O que o projeto já decidiu</h2><ul>" + D.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div><div class=card><h2>O que está pendente</h2><ul>" + P.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
+    var D = ["Cobertura = doses ÷ nascidos vivos × 100; abandono = (inicial − final) ÷ inicial × 100; homogeneidade = proporção de municípios com 95% ou mais (projeto de pesquisa, seção 3.3).", "Cobertura sem teto na base, com bandeiras para acima de 100%, 110% e 120% e abaixo de 50%.", "Análise principal bruta; sensibilidade em dois limites para os municípios acima de 120%.", "Teto de 100% só em mapas e médias, com o valor bruto na legenda.", "Denominador pequeno (menos de 1.000 crianças) como bandeira à parte, com estratos por porte."];
+    return "<div class=card><h2>O que o projeto definiu</h2><ul>" + D.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
   }
   function tabFontes() {
-    var F = [["PDF do projeto, seção 3.3", "definições de CV, TA e homogeneidade", "PDF"], ["S5y", "decisão sobre cobertura acima de 100%", "DECISÃO"], ["S5r", "meta de 95% e homogeneidade; Portaria MS 2.394/2003, Teixeira e Rocha 2010", "LIDO-WebFetch"], ["S5k", "OMS 2018, Peck 2019, Kirkby 2021, Moura 2023", "LIDO"], ["Epidemiol Serv Saúde 2021 (via relato secundário)", "faixas de abandono 5% e 10%", "SECUNDÁRIO"], ["Limitações registradas no projeto", "denominador, cobertura acima de 100%, abandono negativo, municípios pequenos", "LIDO"]];
-    return "<div class=card><h2>Fontes e status de verificação</h2><div class=tbl-wrap><table><tr><th>Fonte</th><th>Uso</th><th>Status</th></tr>" + F.map(function (f) { return "<tr><td>" + nome(f[0]) + "</td><td>" + f[1] + "</td><td>" + seal(f[2]) + "</td></tr>"; }).join("") + "</table></div><p>Trechos literais e páginas estão nos fichamentos citados. Aspas marcadas LIDO-WebFetch devem ser reconferidas no PDF antes de entrarem no texto do projeto.</p></div>";
+    var r = (NS.refs && NS.refs.indicadores) || [];
+    return "<div class=card><h2>Referências</h2><ul class=refs>" + r.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
   }
   function tabRodar() {
-    return "<div class=card><h2>Como rodar de verdade</h2><p>Entradas: tabelas de doses por município, ano e dose, e nascidos vivos do SINASC por município e ano.</p><h3>Python (pandas)</h3><pre>df['cv'] = df['doses'] * 100 / df['nascidos']\ndf['ta'] = (df['dose1'] - df['dose3']) * 100 / df['dose1']\ndf['atinge'] = df['doses'] * 100 &gt;= 95 * df['nascidos']\nhomog = df.groupby('ano')['atinge'].mean() * 100</pre><p>Os nomes de coluna acima são exemplos. A mesma lógica vale em R (dplyr) " + seal("NÃO VERIFICADO") + " quanto a pacotes específicos.</p><p>Pacotes para ler DBF/DBC do DATASUS (por exemplo microdatasus, read.dbc): " + seal("NÃO VERIFICADO") + ". Confirmar na documentação oficial antes de citar.</p><h3>Conferência independente</h3><pre>node tests/dump_indicadores.js &gt; ind_js.json\npython3 tests/check_indicadores.py ind_js.json</pre></div>";
+    return "<div class=card><h2>Como rodar de verdade</h2><p>Entradas: tabela de doses por município, ano e dose, e nascidos vivos do SINASC por município e ano.</p><h3>Python (pandas)</h3><pre>df['cv'] = df['doses'] * 100 / df['nascidos']\ndf['ta'] = (df['dose1'] - df['dose3']) * 100 / df['dose1']\ndf['atinge'] = df['doses'] * 100 &gt;= 95 * df['nascidos']\nhomog = df.groupby('ano')['atinge'].mean() * 100</pre><p>Os nomes de coluna são exemplos; a mesma lógica vale em qualquer linguagem.</p><h3>Conferência neste repositório</h3><pre>node tests/dump_indicadores.js &gt; ind_js.json\npython3 tests/check_indicadores.py ind_js.json</pre></div>";
   }
-
   function tabFaq() { return "<div class=card>" + STEPS.map(function (x) { return "<h3>" + x.q + "</h3><p>" + x.a + "</p>"; }).join("") + "</div>"; }
 
   NS.methods.indicadores = {
     id: "indicadores", n: 1, nome: "Indicadores", ready: true, steps: STEPS.length,
-    tabs: [["contexto", "Contexto"], ["dados", "Dados"], ["passos", "Passo a passo"], ["resultado", "Resultado"], ["limites", "Limitações"], ["decisao", "Decidido x pendente"], ["fontes", "Fontes"], ["rodar", "Como rodar de verdade"], ["faq", "Perguntas frequentes"]],
+    tabs: [["contexto", "Contexto"], ["dados", "Dados"], ["passos", "Passo a passo"], ["resultado", "Resultado"], ["limites", "Limitações"], ["decisao", "Decisões do projeto"], ["fontes", "Referências"], ["rodar", "Como rodar de verdade"], ["faq", "Perguntas frequentes"]],
     render: function (tab, root, app, state) {
       if (tab === "passos") { renderPassos(root, app, state); return; }
       root.innerHTML = { contexto: tabContexto, dados: tabDados, resultado: tabResultado, limites: tabLimites, decisao: tabDecisao, fontes: tabFontes, rodar: tabRodar, faq: tabFaq }[tab]();

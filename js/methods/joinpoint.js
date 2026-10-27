@@ -7,12 +7,8 @@
   var OPTS = { fim: 2, entre: 2 }, SEED = 2026, NPERM = 1000;
 
   /* ---------- selos de status ---------- */
-  function seal(s) {
-    var m = { "LIDO": ["ok", "LIDO"], "LIDO-WebFetch": ["ok", "LIDO-WebFetch"], "SECUNDÁRIO": ["", "SECUNDÁRIO · a confirmar"], "NÃO LOCALIZADO": ["", "NÃO LOCALIZADO · a confirmar"],
-      "CALCULADO": ["", "cálculo próprio · a conferir no software"], "NÃO VERIFICADO": ["", "não verificado · a confirmar"] }[s] || ["", s];
-    return '<span class="seal ' + m[0] + '">' + m[1] + "</span>";
-  }
-  function src(list) { var seen = {}, out = []; list.forEach(function (x) { if (!seen[x[1]]) { seen[x[1]] = 1; out.push(seal(x[1])); } }); return '<p class="srcline"><b>Fonte:</b> Manual do Joinpoint (NCI) ' + out.join(" ") + "</p>"; }
+  function seal() { return ""; }
+  function src() { return ""; }
 
   /* ---------- estado por conjunto de dados ---------- */
   var cache = {}, token = 0;
@@ -50,11 +46,12 @@
     return ch;
   }
   function cap(stage, txt) { var p = document.createElement("p"); p.className = "cap"; p.textContent = txt; stage.appendChild(p); return p; }
+  function pFmt(ex, n) { return !n ? "–" : ex === 0 ? "menor que " + fmt(1 / n, 3) : fmt(ex / n, 3); }
   function f2(x) { return fmt(x, 2); } function f4(x) { return fmt(x, 4); }
   function segTxt(g) { return g.de + "–" + g.ate; }
 
   /* ---------- passos ---------- */
-  var SIMPLE = [0, 3, 5, 7, 8, 10]; /* roteiro simplificado: série, dobra, Monte Carlo, APC, AAPC, o que não diz */
+  var SIMPLE = [0, 3, 5, 6, 7, 8, 10]; /* roteiro simplificado: série, dobra, Monte Carlo, fila de testes, APC, AAPC, o que não diz */
   var STEPS = [
     { t: "A série: os degraus", // 1
       kid: "Cada ponto é um ano e mostra quantas crianças, em cada 100, foram vacinadas. O gráfico mostra se a cobertura sobe, cai ou muda de rumo.",
@@ -74,7 +71,7 @@
       pc: function () { return "Divide a cobertura por 100 e aplica o logaritmo natural (ln) em cada ano."; },
       conta: function (S) { var r = S.ser.cob.slice(0, Math.min(S.n, 5)).map(function (c, i) { return "<span class=eq>" + S.ser.anos[i] + ": ln(" + fmt(c / 100, 2) + ") = " + f4(Math.log(c / 100)) + "</span>"; }).join(""); return r + (S.n > 5 ? "<span class=eq>… (as demais " + (S.n - 5) + " seguem o mesmo cálculo)</span>" : ""); },
       tech: function () { return "<p>Modelo log-linear: ln(y) = b₀ + b₁·x + e. Dentro de cada segmento, ln da taxa é linear no tempo e APC = (e<sup>b₁</sup> − 1) × 100, o que pressupõe variação percentual constante no segmento. Percentuais devem ser transformados em proporções antes da análise.</p><p>Escolha entre linear e log-linear: o manual manda escolher o modelo cuja análise de resíduos indique melhor ajuste. Com cobertura perto do teto de 100%, isso precisa ser verificado nos resíduos.</p>"; },
-      q: "Por que não ajustar a cobertura direto, sem ln?", a: "Seria um modelo linear em pontos percentuais. O manual aceita os dois e manda escolher pela análise de resíduos; o APC percentual vem do modelo log-linear. A escolha para a série real fica pendente.",
+      q: "Por que não ajustar a cobertura direto, sem ln?", a: "Seria um modelo linear em pontos percentuais. O manual aceita os dois e manda escolher pela análise de resíduos; o APC percentual vem do modelo log-linear. A escolha para a série real depende da análise dos resíduos.",
       src: [["1–4", "LIDO"], ["8–9", "LIDO"]],
       viz: function (st, S) { var a = new C.Chart(st, { xs: S.ser.anos, ymin: S.yr[0] / 100, ymax: 1, ystep: S.key === "5" ? .1 : .05, yfmt: function (v) { return fmt(v, 2); }, ylabel: "proporção", h: 190, label: "Proporção por ano" });
         var lo = Math.log(S.yr[0] / 100), b = new C.Chart(st, { xs: S.ser.anos, ymin: lo, ymax: 0, ystep: S.key === "5" ? .2 : .05, yfmt: function (v) { return fmt(v, 2); }, ylabel: "ln(proporção)", h: 190, label: "ln da proporção por ano" });
@@ -87,7 +84,7 @@
     { t: "Uma reta só", // 3
       kid: "Primeiro tentamos descrever todos os anos com uma única reta. Os tracinhos vermelhos mostram a distância entre cada ponto e a reta: é o erro de cada ano.",
       pc: function () { return "Acha a reta que fica mais perto de todos os pontos e soma o quadrado dos erros. Essa soma é o erro total, chamado de SSE."; },
-      conta: function (S) { var b = S.f0.beta; return "<span class=eq>Reta no ln: ln(y) = " + f4(b[0]) + " + (" + f4(b[1]) + ")·x</span><span class=eq>Soma dos quadrados dos erros da régua única: <b>SSE_N = " + f4(S.f0.sse) + "</b></span><span class=eq>Variação percentual anual desta reta única: (e^" + f4(b[1]) + " − 1)·100 = " + sg((Math.exp(b[1]) - 1) * 100, 2) + "%</span>"; },
+      conta: function (S) { var b = S.f0.beta; return "<span class=eq>Reta no ln: ln(y) = " + f4(b[0]) + " + (" + f4(b[1]) + ")·x</span><span class=eq>Soma dos quadrados dos erros da reta única: <b>SSE_N = " + f4(S.f0.sse) + "</b></span><span class=eq>Variação percentual anual desta reta única: (e^" + f4(b[1]) + " − 1)·100 = " + sg((Math.exp(b[1]) - 1) * 100, 2) + "%</span>"; },
       tech: function () { return "<p>É o modelo nulo da primeira comparação: k = 0 joinpoints, sem dobra. O ajuste é por mínimos quadrados ordinários, que supõe erros não correlacionados com variância constante. O SSE mínimo para k joinpoints vem do grid search de Lerman; para k = 0 é simplesmente a reta de mínimos quadrados.</p>"; },
       q: "O que é SSE?", a: "A soma dos quadrados das distâncias entre cada ponto e a linha do modelo, na escala ln. Quanto menor, melhor o ajuste.",
       src: [["10", "LIDO"], ["14", "LIDO"]],
@@ -99,21 +96,32 @@
 
     { t: "A dobra", // 4
       kid: "Agora a reta pode dobrar em um ponto, a “dobra”. As duas partes precisam se encontrar na dobra. O computador testa uma dobra em cada ano possível e fica com a que deixa o erro total menor.",
-      limite: "Limite da analogia: o pino só pode ficar em um ano da série (por padrão), e não pode ficar perto demais das pontas.",
-      pc: function (S) { var m = ST.enumerateTaus(S.n, 1, 2, 2).length; return "Testa " + m + " posição(ões) possível(is) para o pino, calcula o erro total (SSE) de cada uma e escolhe a menor (busca em grade). " + (S.key === "5" ? "Com 5 pontos, a restrição de 2 pontos nas pontas deixa só 1 posição: 2022." : "Aqui mostramos uma dobra só; o programa repete isso para 2, 3 e 4 dobras."); },
-      conta: function (S) { var c = ST.bestFit(S.y, 1, Object.assign({ collect: true }, OPTS)); return "<span class=eq>Posições testadas: " + c.nConfigs + "</span><span class=eq>Melhor pino: <b>" + S.ser.anos[c.taus[0]] + "</b> com SSE = " + f4(c.sse) + " (contra " + f4(S.f0.sse) + " da régua única)</span>"; },
+      limite: "Limite da analogia: a dobra só pode ficar em um ano da série (por padrão), e não pode ficar perto demais das pontas.",
+      pc: function (S) { var m = ST.enumerateTaus(S.n, 1, 2, 2).length; return "Testa " + m + " posição(ões) possível(is) para a dobra, calcula o erro total (SSE) de cada uma e escolhe a menor (busca em grade). " + (S.key === "5" ? "Com 5 pontos, a restrição de 2 pontos nas pontas deixa só 1 posição: 2022." : "Abaixo você também pode ver o melhor ajuste com 2, 3 e 4 dobras."); },
+      conta: function (S) { var c = ST.bestFit(S.y, 1, Object.assign({ collect: true }, OPTS)); return "<span class=eq>Posições testadas: " + c.nConfigs + "</span><span class=eq>Melhor dobra: <b>" + S.ser.anos[c.taus[0]] + "</b> com SSE = " + f4(c.sse) + " (contra " + f4(S.f0.sse) + " da reta única)</span>"; },
       tech: function () { return "<p>Modelo: E[y|x] = β₀ + β₁x + δ₁(x − τ₁)₊, contínuo em τ₁. Grid search de Lerman: cria uma grade de todas as posições permitidas e calcula o SSE em cada uma. Por padrão, joinpoints só em observações; não pode haver joinpoint a menos de 2 pontos das pontas, e deve haver pelo menos 2 pontos entre dois joinpoints.</p><p>Inconsistência interna do manual, documentada e não harmonizada: a página diz “Max = 7” e também “máximo de 9” para o grid search.</p>"; },
       q: "O Joinpoint prova que algo mudou naquele ano?", a: "Não. Ele escolhe o ano que melhor encaixa. Se a mudança é real, quem decide é o teste da próxima etapa, e a causa ele não explica.",
       src: [["5–6", "LIDO"], ["10–13", "LIDO"], ["44", "LIDO"], ["47", "LIDO"]],
-      viz: function (st, S) { var ch = baseChart(st, S, "Teste de cada posição do pino"), g = ch.g, all = ST.bestFit(S.y, 1, Object.assign({ collect: true }, OPTS)).all, m = all.length;
+      viz: function (st, S) { var ch = baseChart(st, S, "Teste de cada posição da dobra"), g = ch.g, all = ST.bestFit(S.y, 1, Object.assign({ collect: true }, OPTS)).all, m = all.length;
         ch.points(S.ser.cob, "pt", 4, g); var cand = el("path", { "class": "l-alt", d: "" }, g), mark = el("circle", { r: 8, "class": "pt-break", cx: -20, cy: -20 }, g);
         var W4 = C.width(st), bars = el("svg", { viewBox: "0 0 " + W4 + " 110", role: "img", "aria-label": "SSE de cada posição" }, st), mx = Math.max.apply(null, all.map(function (a) { return a.sse; })), bw = (W4 - 40) / m;
         var br = all.map(function (a, i) { return el("rect", { x: 20 + i * bw + 1, y: 90, width: Math.max(2, bw - 3), height: 0, "class": "bar" }, bars); });
-        el("text", { x: 20, y: 12, "font-size": 12, "class": "muted" }, bars, "SSE de cada posição do pino (barra mais baixa = melhor)");
+        el("text", { x: 20, y: 12, "font-size": 12, "class": "muted" }, bars, "SSE de cada posição da dobra (barra mais baixa = melhor)");
         var best = all.reduce(function (b, a, i) { return a.sse < all[b].sse ? i : b; }, 0), lab = el("text", { x: W4 / 2, y: 107, "text-anchor": "middle", "font-size": 12 }, bars, "");
-        function draw(i) { var f = ST.fitAt(S.y, all[i].taus), v = pctFit(S, f.fitted); cand.setAttribute("d", v.map(function (q, j) { return (j ? "L" : "M") + ch.x(j).toFixed(1) + " " + ch.y(q).toFixed(1); }).join(" ")); mark.setAttribute("cx", ch.x(all[i].taus[0])); mark.setAttribute("cy", ch.y(v[all[i].taus[0]])); lab.textContent = "testando o pino em " + S.ser.anos[all[i].taus[0]] + ": SSE = " + f4(all[i].sse); }
-        clock.tween(Math.max(2, m * .45), function (p) { var k = Math.min(m - 1, Math.floor(p * m)); draw(p >= 1 ? best : k); br.forEach(function (r, i) { var upto = p >= 1 ? m : k + 1; if (i < upto) { var h = 70 * all[i].sse / mx; r.setAttribute("height", h); r.setAttribute("y", 90 - h); r.setAttribute("class", p >= 1 && i === best ? "bar-hit" : "bar"); } }); if (p >= 1) lab.textContent = "melhor pino: " + S.ser.anos[all[best].taus[0]] + " (SSE = " + f4(all[best].sse) + ")"; });
-        cap(st, "Linha vermelha: régua dobrada no pino em teste. Círculo âmbar: o pino. Barras vermelhas = melhor posição."); } },
+        function draw(i) { var f = ST.fitAt(S.y, all[i].taus), v = pctFit(S, f.fitted); cand.setAttribute("d", v.map(function (q, j) { return (j ? "L" : "M") + ch.x(j).toFixed(1) + " " + ch.y(q).toFixed(1); }).join(" ")); mark.setAttribute("cx", ch.x(all[i].taus[0])); mark.setAttribute("cy", ch.y(v[all[i].taus[0]])); lab.textContent = "testando a dobra em " + S.ser.anos[all[i].taus[0]] + ": SSE = " + f4(all[i].sse); }
+        clock.tween(Math.max(2, m * .45), function (p) { var k = Math.min(m - 1, Math.floor(p * m)); draw(p >= 1 ? best : k); br.forEach(function (r, i) { var upto = p >= 1 ? m : k + 1; if (i < upto) { var h = 70 * all[i].sse / mx; r.setAttribute("height", h); r.setAttribute("y", 90 - h); r.setAttribute("class", p >= 1 && i === best ? "bar-hit" : "bar"); } }); if (p >= 1) lab.textContent = "melhor dobra: " + S.ser.anos[all[best].taus[0]] + " (SSE = " + f4(all[best].sse) + ")"; });
+        cap(st, "Linha vermelha: reta dobrada na dobra em teste. Círculo âmbar: a dobra. Barra de destaque: melhor posição.");
+        if (S.key === "25") {
+          var box = document.createElement("div"); box.className = "opts"; var grp = document.createElement("span"); grp.className = "grp"; grp.innerHTML = "<span>Ver o melhor ajuste com:</span>"; box.appendChild(grp);
+          var many = el("g", {}, g), note = document.createElement("p"), btns = [];
+          note.className = "cap conta"; note.textContent = "Escolha o número de dobras para ver o ajuste.";
+          function show(k) { many.textContent = ""; var f = ST.bestFit(S.y, k, OPTS); if (!f) return; var v = pctFit(S, f.fitted); ch.line(v, "l-alt", many);
+            (f.taus || []).forEach(function (t) { el("circle", { cx: ch.x(t), cy: ch.y(v[t]), r: 7, "class": "pt-break" }, many); });
+            note.textContent = k + " dobra" + (k === 1 ? "" : "s") + ((f.taus || []).length ? " (em " + f.taus.map(function (t) { return S.ser.anos[t]; }).join(", ") + ")" : "") + ": erro total (SSE) = " + f4(f.sse) + ". Mais dobras sempre reduzem o erro; a simulação de Monte Carlo decide se a melhora compensa.";
+            btns.forEach(function (b, i) { b.setAttribute("aria-pressed", String(i === k)); }); }
+          [0, 1, 2, 3, 4].forEach(function (k) { var b = document.createElement("button"); b.textContent = k + (k === 1 ? " dobra" : " dobras"); b.setAttribute("aria-pressed", "false"); b.addEventListener("click", function () { show(k); }); btns.push(b); grp.appendChild(b); });
+          st.appendChild(box); st.appendChild(note);
+        } } },
 
     { t: "A dobra ajuda? A razão T", // 5
       kid: "Comparamos o erro total da reta única com o das retas com dobra. Se o erro cai muito, a razão T fica grande e a dobra ajudou. Se T fica perto de 1, a dobra quase não ajudou.",
@@ -123,7 +131,7 @@
       q: "T grande já prova que a dobra existe?", a: "Não. Precisa comparar com o que T faria se a dobra não existisse (o liquidificador do próximo passo).",
       src: [["18–19", "LIDO"], ["21", "LIDO"]],
       viz: function (st, S) { var W5 = C.width(st), s = el("svg", { viewBox: "0 0 " + W5 + " 150", role: "img", "aria-label": "Comparação de SSE" }, st), W = W5 - 150;
-        var items = [["Régua única (SSE_N)", S.f0.sse, "bar"], ["Com pino(s) (SSE_A)", S.fA.sse, "bar-hit"]], rs = [], vs = [];
+        var items = [["Régua única (SSE_N)", S.f0.sse, "bar"], ["Com dobra(s) (SSE_A)", S.fA.sse, "bar-hit"]], rs = [], vs = [];
         items.forEach(function (it, i) { el("text", { x: 12, y: 24 + i * 50, "font-size": 13, "font-weight": 700 }, s, it[0]); rs.push(el("rect", { x: 12, y: 32 + i * 50, width: 0, height: 22, "class": it[2] }, s)); vs.push(el("text", { x: 16, y: 48 + i * 50, "font-size": 13, fill: "#fff" }, s, "")); });
         var tt = el("text", { x: 12, y: 142, "font-size": 15, "font-weight": 700 }, s, "");
         clock.tween(2, function (p) { items.forEach(function (it, i) { var w = Math.max(2, W * it[1] / S.f0.sse * p); rs[i].setAttribute("width", w); vs[i].textContent = ""; }); tt.textContent = p >= 1 ? "T = " + f4(S.f0.sse) + " / " + f4(S.fA.sse) + " = " + f2(S.T) : ""; });
@@ -134,8 +142,8 @@
       kid: "Como saber se a dobra ajudou de verdade ou foi acaso? O computador finge que a dobra não existe: pega os erros da reta única, embaralha e devolve cada um a um ano diferente, formando uma série falsa. Repete mil vezes (simulação de Monte Carlo) e vê com que frequência o ganho falso é tão grande quanto o real.",
       limite: "Atenção: embaralham-se os erros, não a ordem dos anos. A tendência da reta única continua; só o ruído muda de lugar.",
       pc: function (S) { return "Repete " + NPERM + " vezes: embaralha os erros da reta única, soma de volta à reta e refaz os ajustes, obtendo um T falso. O valor p é a fração das vezes em que o T falso é maior ou igual ao T real."; },
-      conta: function (S) { return '<span class=eq>T observado = ' + f2(S.T) + '</span><span class=eq data-live="p">p = (número de T_falso ≥ T observado) / réplicas</span>'; },
-      tech: function () { return "<p>Permutam-se os resíduos do modelo nulo e somam-se de volta aos valores modelados por ele, formando um conjunto de dados de permutação. O p-valor é a proporção de conjuntos permutados cujo T é pelo menos tão extremo quanto o observado; rejeita-se o nulo se p for menor que o nível do teste. Sob H₀ o p-valor é uniforme em (0,1).</p><p>É uma amostra Monte Carlo das N! permutações possíveis (LIDO-WebFetch). Mínimo 1000 réplicas, máximo 10.000, recomendação de pelo menos 4499; o padrão atual é 4499 e versões antigas usavam 999. Aqui usamos o mínimo, 1000, para a animação ser rápida. O resultado depende da semente; a nossa é fixa (" + SEED + "), então este simulador sempre dá o mesmo resultado.</p><p><b>O que o p-valor diz:</b> quão compatível o ganho observado é com o acaso sob o modelo nulo. Não “prova” a dobra.</p>"; },
+      conta: function (S) { return '<span class=eq>T observado = ' + f2(S.T) + '</span><span class=eq data-live="p">p = séries falsas com ganho ≥ real ÷ séries geradas</span>'; },
+      tech: function () { return "<p>Permutam-se os resíduos do modelo nulo e somam-se de volta aos valores modelados por ele, formando um conjunto de dados de permutação. O p-valor é a proporção de conjuntos permutados cujo T é pelo menos tão extremo quanto o observado; rejeita-se o nulo se p for menor que o nível do teste. Sob H₀ o p-valor é uniforme em (0,1).</p><p>É uma amostra Monte Carlo das N! permutações possíveis. Mínimo 1000 réplicas, máximo 10.000, recomendação de pelo menos 4499; o padrão atual é 4499 e versões antigas usavam 999. Aqui usamos o mínimo, 1000, para a animação ser rápida. O resultado depende da semente; a nossa é fixa (" + SEED + "), então este simulador sempre dá o mesmo resultado.</p><p><b>O que o p-valor diz:</b> quão compatível o ganho observado é com o acaso sob o modelo nulo. Não “prova” a dobra.</p>"; },
       q: "Mil sorteios é o número certo?", a: "É o mínimo permitido pelo manual. A recomendação é pelo menos 4499 e o padrão atual é 4499. Com poucos sorteios o p-valor varia mais entre rodadas; por isso a semente é fixada e declarada.",
       src: [["20–27", "LIDO"], ["86", "LIDO"]],
       viz: function (st, S, ctl) { return permViz(st, S, ctl); } },
@@ -145,7 +153,7 @@
       pc: function (S) { return "Faz a sequência de testes (cada um com " + NPERM + " réplicas) e fica com o número de dobras em que a fila para."; },
       conta: function (S) { return "<div class='tbl-wrap' data-live='seq'></div>"; },
       tech: function (S) { return "<p>Procedimento sequencial: H₀: k = ka contra H₁: k = kb, começando em ka = MIN e kb = MAX; se H₀ é rejeitada sobe-se ka, senão desce-se kb, até ka = kb. A partir da versão 3.0 o nível de cada teste é α(ka, kb) = α/(MAX − ka), com α global padrão 0,05; antes da v3.0 usava-se Bonferroni. Neste exemplo MIN = 0 e MAX = " + S.kMax + ".</p><p>Mudar MIN ou MAX muda os níveis e pode mudar o modelo final. A permutação tende a detectar menos joinpoints. Desde a versão 5.0 o padrão do programa é o WBIC, e não a permutação; este simulador mostra a permutação porque é o método descrito no manual como clássico (Kim et al., 2000). A escolha para o projeto está <b>pendente</b>.</p>"; },
-      q: "O programa atual ainda usa permutação?", a: "Pode usar, mas o padrão desde a versão 5.0 é o WBIC. Qual método usar no projeto ainda não foi decidido.",
+      q: "O programa atual ainda usa permutação?", a: "Pode usar, mas o padrão desde a versão 5.0 é o WBIC. Qual método usar é uma escolha de configuração.",
       src: [["17", "LIDO"], ["29–34", "LIDO"], ["39", "LIDO"]],
       viz: function (st, S) { var box = document.createElement("div"); st.appendChild(box); box.innerHTML = "<p class=cap>A tabela abaixo mostra cada teste da fila.</p>"; var c = new C.Chart(st, { xs: S.ser.anos, ymin: S.yr[0], ymax: S.yr[1], ystep: S.yr[2], ylabel: "cobertura (%)", h: 260, label: "Série e modelo escolhido" }); ch2(c, S); } },
 
@@ -167,14 +175,14 @@
       src: [["66–73", "LIDO"], ["76", "NÃO LOCALIZADO"]],
       viz: function (st, S) { var W9 = C.width(st), box = el("svg", { viewBox: "0 0 " + W9 + " 150", role: "img", "aria-label": "Pesos dos trechos" }, st); liveAapc(box, S, W9); } },
 
-    { t: "Margem de erro de cada trecho (teste t)", // 10
-      kid: "Para cada trecho, o teste t responde: a inclinação é diferente de zero? E com que margem de erro? É outro teste, uma conta com tabela, sem simulação.",
-      pc: function () { return "Para cada trecho, calcula o erro padrão da inclinação, a estatística t, o p-valor bicaudal e o intervalo de confiança."; },
+    { t: "Margem de erro de cada trecho", // 10
+      kid: "Cada trecho tem uma inclinação medida com alguma incerteza. A barra mostra a margem de erro. Se a barra cruza o zero, não dá para afirmar que a cobertura subiu ou caiu naquele trecho.",
+      pc: function () { return "Para cada trecho, calcula a margem de erro (intervalo de confiança de 95%) e o valor p do teste t."; },
       conta: function (S) { return "<div data-live='tt'></div>"; },
       tech: function (S) { return "<p>O p-valor do segmento vem de um teste t bicaudal, 2{1 − t<sub>d</sub>(|U|)}, com d = n* − 2(k + 1) graus de liberdade, onde n* exclui os pontos sobre joinpoints. Os erros padrão vêm de mínimos quadrados sem a restrição de continuidade, condicionados aos joinpoints estimados e sem os pontos sobre joinpoints. IC: 100·{exp(b ± s·t<sub>d</sub>⁻¹(1 − α/2)) − 1}.</p><p><b>Este p NÃO é o da permutação</b>: o manual diz que o p do teste t é menos exato por ser assintótico. Estatísticas de inclinação exigem pelo menos 3 observações por segmento, excluindo as sobre joinpoints.</p><p>O programa atual usa por padrão o intervalo por quantil empírico; este simulador mostra o IC t descrito no manual e <b>não</b> reproduz o quantil empírico. Segmentos curtos podem ter IC paramétrico “muito liberal”.</p>"; },
       q: "Por que o exemplo de 5 pontos não mostra p nem intervalo?", a: "Porque, com 5 pontos, cada trecho tem menos de 3 observações depois de retirar o ponto sobre a dobra, e o manual diz que o erro padrão e o p não podem ser calculados assim.",
       src: [["51", "LIDO"], ["53–57", "LIDO"], ["59", "LIDO"], ["63", "LIDO"]],
-      viz: function (st, S) { var c = new C.Chart(st, { xs: S.ser.anos, ymin: S.yr[0], ymax: S.yr[1], ystep: S.yr[2], ylabel: "cobertura (%)", h: 260, label: "Modelo escolhido" }); ch2(c, S); } },
+      viz: function (st, S) { ciPlot(st, S); } },
 
     { t: "O que o Joinpoint não diz", // 11
       kid: "O Joinpoint mostra quando a tendência mudou, não por quê. É como um termômetro: mostra a febre, não a causa.",
@@ -206,7 +214,6 @@
     var big = S.n <= 5, rReal = big ? 9 : 6, rFake = big ? 8 : 5;
     /* pontos reais: grandes, com anel, por cima de tudo */
     var real = ch.points(S.ser.cob, "pt-real", rReal, gr); real.forEach(function (c) { c.setAttribute("r", rReal); });
-    var hist = new C.Histogram(st, { label: "Histograma de T das séries falsas", lo: 1 });
     var info = document.createElement("p"); info.className = "cap conta"; info.setAttribute("role", "status"); st.appendChild(info);
     var bar = document.createElement("div"); bar.className = "nav-steps"; bar.style.flexWrap = "wrap"; st.appendChild(bar);
     function mk(txt, fn) { var b = document.createElement("button"); b.className = "btn btn-small"; b.textContent = txt; b.addEventListener("click", fn); bar.appendChild(b); return b; }
@@ -223,9 +230,8 @@
     function update(last) {
       var s = stats(), li = ctl.root.querySelector("[data-live=p]");
       if (last) { var d = Array.prototype.map.call(last.series, function (v) { return 100 * Math.exp(v); }); if (trail.length > 8) gl.removeChild(trail.shift()); trail.forEach(function (t) { t.style.opacity = .18; }); var p = ch.line(d, "l-perm", gl); p.style.opacity = 1; p.style.strokeWidth = 2; trail.push(p); drawFake(last.series); }
-      hist.update(pt.Ts, S.T);
-      var txt = "Série falsa " + s.n + " de " + NPERM + ". T falso ≥ T real em " + s.ex + " delas. p = " + s.ex + "/" + s.n + (s.n ? " = " + (s.p === 0 ? "0 (menor que 1/" + NPERM + ")" : fmt(s.p, 3)) : "");
-      info.textContent = txt; if (li) li.textContent = "p = " + s.ex + " / " + s.n + (s.n ? " = " + fmt(s.p, 3) : "");
+      var txt = "Séries falsas geradas: " + s.n + " de " + NPERM + ". Em " + s.ex + " delas o ganho de ajuste foi tão grande quanto o real. Valor p até agora: " + pFmt(s.ex, s.n) + ".";
+      info.textContent = txt; if (li) li.textContent = "p = " + s.ex + " ÷ " + s.n + " = " + (s.n ? (s.ex === 0 ? "0 (menor que " + fmt(1 / s.n, 3) + ")" : fmt(s.ex / s.n, 3)) : "–");
     }
     function stop() { if (task) task.done = true; if (task2) task2.done = true; }
     function fresh() { stop(); trail.forEach(function (t) { if (t.parentNode) t.parentNode.removeChild(t); }); trail = []; gp.textContent = ""; pt = new ST.PermTest(S.y, 0, S.kMax, { seed: SEED, fim: OPTS.fim, entre: OPTS.entre }); update(null); }
@@ -238,7 +244,7 @@
     mk("Uma série por vez", function () { clock.pause(); if (pt.Ts.length < NPERM) update(pt.step()); });
     mk("Recomeçar o sorteio", function () { fresh(); clock.play(); auto(); });
     var lg = document.createElement("p"); lg.className = "legend"; lg.innerHTML = "<span><i class='k-real'></i> pontos reais</span><span><i class='k-fake'></i> pontos falsos (erros embaralhados)</span><span><i class='k-null'></i> reta única</span><span><i class='k-perm'></i> reta ajustada à série falsa</span>"; st.appendChild(lg);
-    cap(st, "A cada série falsa, os pontos laranja mudam de posição: o erro de cada ano foi trocado de lugar. Barras vermelhas: T falso ≥ T real.");
+    cap(st, "A cada série falsa, os pontos laranja mudam de posição: o erro de cada ano foi trocado de lugar. Se quase nenhuma série falsa chega ao ganho real, a dobra provavelmente não é acaso.");
   }
 
   /* ---------- blocos "vivos" que dependem da fila de testes ---------- */
@@ -271,6 +277,29 @@
     var avg = segs.reduce(function (a, g) { return a + g.length * g.slope; }, 0) / tot;
     return "<span class=eq>Média ponderada das inclinações = (" + num + ") / " + tot + " = " + f4(avg) + "</span><span class=eq><b>AAPC = (e^" + f4(avg) + " − 1)·100 = " + sg(S.sum.aapc, 2) + "% ao ano</b></span>" + (S.sum.aapcCI ? "<span class=eq>IC95% normal: " + sg(S.sum.aapcCI.lo, 2) + "% a " + sg(S.sum.aapcCI.hi, 2) + "%</span>" : "<span class=eq>IC do AAPC: não calculável aqui (mesma razão do passo seguinte).</span>");
   }
+  function ciPlot(st, S) {
+    var box = document.createElement("div"); st.appendChild(box);
+    function draw() {
+      box.textContent = "";
+      if (!S.seq.done) { box.innerHTML = "<p class=cap>calculando…</p>"; return; }
+      var inf = S.sum.inf;
+      if (!inf.ok) { box.innerHTML = "<p class=cap>Com esta série curta não há observações suficientes em cada trecho para calcular a margem de erro. Escolha a série de 25 pontos.</p>"; return; }
+      var segs = S.sum.segs, w = C.width(st), rowH = 44, m = { l: 92, r: 16, t: 16, b: 38 }, h = m.t + m.b + segs.length * rowH;
+      var lo = Math.floor(Math.min.apply(null, segs.map(function (g) { return g.lo; }).concat([0])) / 5) * 5 - 5, hi = Math.ceil(Math.max.apply(null, segs.map(function (g) { return g.hi; }).concat([0])) / 5) * 5 + 5;
+      var X = function (v) { return m.l + (w - m.l - m.r) * (v - lo) / (hi - lo); };
+      var svg = el("svg", { viewBox: "0 0 " + w + " " + h, role: "img", "aria-label": "Margem de erro de cada trecho" }, box);
+      var step = (hi - lo) > 60 ? 20 : 10;
+      for (var v = Math.ceil(lo / step) * step; v <= hi; v += step) { el("line", { x1: X(v), x2: X(v), y1: m.t, y2: h - m.b, "class": "grid" }, svg); el("text", { x: X(v), y: h - m.b + 16, "text-anchor": "middle", "font-size": 12, "class": "muted" }, svg, fmt(v, 0) + "%"); }
+      el("line", { x1: X(0), x2: X(0), y1: m.t, y2: h - m.b, "class": "obs" }, svg);
+      segs.forEach(function (g, i) { var y = m.t + i * rowH + rowH / 2, zero = g.lo <= 0 && g.hi >= 0;
+        el("text", { x: m.l - 8, y: y + 4, "text-anchor": "end", "font-size": 12 }, svg, segTxt(g));
+        el("line", { x1: X(g.lo), x2: X(g.hi), y1: y, y2: y, "class": zero ? "ci-zero" : "ci-ok" }, svg);
+        el("circle", { cx: X(g.apc), cy: y, r: 6, "class": zero ? "ci-dot-zero" : "ci-dot-ok" }, svg);
+        el("text", { x: X(g.apc), y: y - 10, "text-anchor": "middle", "font-size": 11, "font-weight": 700 }, svg, sg(g.apc, 1) + "%"); });
+      var p = document.createElement("p"); p.className = "cap"; p.textContent = "Ponto: variação por ano (APC). Barra: margem de erro de 95%. Linha vermelha: zero. Barra cinza = cruza o zero (não dá para afirmar que subiu ou caiu)."; box.appendChild(p);
+    }
+    S.listeners.push(draw); draw();
+  }
   function ttHtml(S) {
     if (!S.seq.done) return "<p>calculando a fila de testes…</p>";
     var inf = S.sum.inf;
@@ -280,22 +309,30 @@
   }
 
   /* ---------- tela do passo a passo ---------- */
+  var ARW = { prev: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>', next: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>' };
+  function chips(label, opts, cur, onPick) {
+    var g = document.createElement("span"); g.className = "grp"; g.setAttribute("role", "group"); g.setAttribute("aria-label", label);
+    var l = document.createElement("span"); l.textContent = label + ":"; g.appendChild(l);
+    opts.forEach(function (o) { var b = document.createElement("button"); b.type = "button"; b.textContent = o[1]; b.setAttribute("aria-pressed", String(o[0] === cur)); b.addEventListener("click", function () { onPick(o[0]); }); g.appendChild(b); });
+    return g;
+  }
   function renderPassos(root, app, state) {
     var S = prep(state.ds); S.seq0ka = 0;
     if (state.simple === undefined) state.simple = true;
     var order = state.simple ? SIMPLE : STEPS.map(function (x, i) { return i; }), N = order.length;
     var idx = Math.max(0, Math.min(N - 1, (state.step || 1) - 1)), st = STEPS[order[idx]];
-    clock.clear(); S.listeners.length = 0;
-    root.innerHTML = "";
-    var ds = document.createElement("div"); ds.className = "dataset"; ds.innerHTML = "<span><b>Dados:</b></span>";
-    var seg = document.createElement("div"); seg.className = "seg"; seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Conjunto de dados");
-    [["5", "Série didática (5 pontos)"], ["25", "Série fictícia (25 pontos)"]].forEach(function (o) { var b = document.createElement("button"); b.textContent = o[1]; b.setAttribute("aria-pressed", String(o[0] === state.ds)); b.addEventListener("click", function () { state.ds = o[0]; renderPassos(root, app, state); }); seg.appendChild(b); });
-    ds.appendChild(seg);
-    var seg2 = document.createElement("div"); seg2.className = "seg"; seg2.setAttribute("role", "group"); seg2.setAttribute("aria-label", "Roteiro");
-    [[true, "Roteiro simplificado"], [false, "Roteiro completo"]].forEach(function (o) { var b = document.createElement("button"); b.textContent = o[1]; b.setAttribute("aria-pressed", String(o[0] === state.simple)); b.addEventListener("click", function () { state.simple = o[0]; state.step = 1; app.go(state, 1); }); seg2.appendChild(b); });
-    var sp = document.createElement("span"); sp.innerHTML = "<b>Roteiro:</b>"; ds.appendChild(sp); ds.appendChild(seg2); root.appendChild(ds);
-    var head = document.createElement("div"); head.innerHTML = '<p class="stepno">Passo ' + (idx + 1) + " de " + N + '</p><div class="progress" role="progressbar" aria-valuemin="1" aria-valuemax="' + N + '" aria-valuenow="' + (idx + 1) + '"><i style="width:' + ((idx + 1) / N * 100) + '%"></i></div><h2 tabindex="-1" id="step-h">' + (idx + 1) + ". " + st.t + "</h2>";
-    root.appendChild(head);
+    clock.clear(); S.listeners.length = 0; root.innerHTML = "";
+    var ds = document.createElement("div"); ds.className = "opts";
+    ds.appendChild(chips("Série", [["5", "5 pontos"], ["25", "25 pontos"]], state.ds, function (v) { state.ds = v; renderPassos(root, app, state); app.remount && app.remount(); }));
+    ds.appendChild(chips("Roteiro", [[true, "simplificado"], [false, "completo"]], state.simple, function (v) { state.simple = v; state.step = 1; app.go(state, 1); }));
+    root.appendChild(ds);
+    var head = document.createElement("div"); head.className = "stephead";
+    var back = document.createElement("button"); back.className = "arrow"; back.innerHTML = ARW.prev; back.setAttribute("aria-label", "Passo anterior"); back.title = "Passo anterior"; back.disabled = idx === 0; back.addEventListener("click", function () { app.go(state, idx); });
+    var nxt = document.createElement("button"); nxt.className = "arrow"; nxt.innerHTML = ARW.next; nxt.setAttribute("aria-label", "Próximo passo"); nxt.title = "Próximo passo"; nxt.disabled = idx === N - 1; nxt.addEventListener("click", function () { app.go(state, idx + 2); });
+    var no = document.createElement("p"); no.className = "stepno"; no.textContent = "Passo " + (idx + 1) + " de " + N;
+    head.appendChild(back); head.appendChild(no); head.appendChild(nxt); root.appendChild(head);
+    var pr = document.createElement("div"); pr.className = "progress"; pr.setAttribute("role", "progressbar"); pr.setAttribute("aria-valuemin", "1"); pr.setAttribute("aria-valuemax", String(N)); pr.setAttribute("aria-valuenow", String(idx + 1)); pr.innerHTML = '<i style="width:' + ((idx + 1) / N * 100) + '%"></i>'; root.appendChild(pr);
+    var h2 = document.createElement("h2"); h2.id = "step-h"; h2.tabIndex = -1; h2.textContent = (idx + 1) + ". " + st.t; root.appendChild(h2);
     var stage = document.createElement("div"); stage.className = "stage"; root.appendChild(stage);
     var ctl = { root: root };
     var body = document.createElement("div"); root.appendChild(body);
@@ -303,12 +340,7 @@
       "<div class='callout kid'><b>Explicação simplificada</b>" + st.kid + (st.limite ? "<br><em>" + st.limite + "</em>" : "") + "</div>" +
       "<div class=card><span class=lbl>O que o computador faz</span>" + st.pc(S) + "</div>" +
       "<div class='card conta'><span class=lbl>Conta na tela</span>" + st.conta(S) + "</div>" +
-      "<details class=tech" + (app.tech() ? " open" : "") + "><summary>Ver a versão técnica</summary>" + st.tech(S) + "</details>" +
-      src(st.src);
-    var nav = document.createElement("div"); nav.className = "nav-steps";
-    var back = document.createElement("button"); back.className = "btn"; back.textContent = "Voltar"; back.disabled = idx === 0; back.addEventListener("click", function () { app.go(state, idx); });
-    var nxt = document.createElement("button"); nxt.className = "btn primary"; nxt.textContent = idx === N - 1 ? "Fim do método" : "Avançar"; nxt.disabled = idx === N - 1; nxt.addEventListener("click", function () { app.go(state, idx + 2); });
-    nav.appendChild(back); nav.appendChild(nxt); root.appendChild(nav);
+      "<details class=tech" + (app.tech() ? " open" : "") + "><summary>Ver a versão técnica</summary>" + st.tech(S) + "</details>";
     st.viz(stage, S, ctl);
     function refresh() {
       var a = root.querySelector("[data-live=seq]"); if (a) a.innerHTML = seqTable(S);
@@ -340,51 +372,37 @@
   }
   function tabLimitacoes() {
     var L = [
-      ["Dois p-valores diferentes. O da permutação decide quantas dobras; o do teste t por segmento é assintótico e, segundo o manual, menos exato.", "56–57", "LIDO"],
-      ["A permutação embaralha os resíduos do modelo nulo, e não a série original.", "20", "LIDO"],
-      ["A permutação deixou de ser o padrão: desde a v5.0 o padrão é o WBIC, e o IC padrão é o quantil empírico.", "39, 59", "LIDO"],
-      ["O resultado depende de MIN, MAX, restrições, número de réplicas e semente; fazer análise de sensibilidade.", "33, 86", "LIDO"],
-      ["25 pontos é curto: estatísticas de inclinação exigem 3 ou mais observações por trecho; pontos sobre dobras são descartados; trechos curtos dão IC paramétrico “muito liberal”.", "51, 54–55, 63", "LIDO"],
-      ["Dividir um trecho em dois reduz o poder dos testes de cada pedaço.", "58", "LIDO"],
-      ["O modelo log-linear supõe variação percentual constante em cada trecho. Com cobertura perto do teto de 100%, a adequação do log-linear e da normalidade dos erros deve ser verificada nos resíduos. O manual não trata de cobertura vacinal nem de cobertura acima de 100%.", "4, 8; seção 4 item 7", "NÃO LOCALIZADO"],
-      ["O AAPC não é a média aritmética dos APCs e pode ficar perto de zero mesmo com trechos fortes de sinais opostos.", "68, 69", "LIDO"],
-      ["Autocorrelação: o padrão supõe erros não correlacionados; corrigir com φ estimado pode reduzir o poder; o manual sugere sensibilidade com φ = 0,1; 0,2; 0,3.", "79–82", "LIDO"],
-      ["Heterocedasticidade: para proporções com n conhecido, o manual sugere EP = √(p(1 − p)/n), o que exige o denominador de cada ano.", "85", "LIDO"],
-      ["Joinpoints só em observações por padrão: a dobra “estimada” é um ano da série.", "11", "LIDO"],
-      ["Desempenho (poder e cobertura do IC) do método para n = 25: não localizado nas fontes lidas. Kim et al. 2000 foi lido só no resumo.", "lacunas 1, 7", "NÃO LOCALIZADO"]
+      "Há dois valores p diferentes. O da simulação de Monte Carlo decide quantas dobras; o do teste t de cada trecho é aproximado e, segundo o manual, menos exato.",
+      "A simulação embaralha os erros do modelo mais simples, e não a ordem dos anos.",
+      "Desde a versão 5.0, o padrão do programa é outro critério de seleção (WBIC); a simulação de permutação continua disponível.",
+      "O resultado depende de configurações (mínimo e máximo de dobras, restrições, número de séries falsas e semente). Convém repetir com outras configurações.",
+      "Série de 25 pontos é curta: a margem de erro de cada trecho exige 3 ou mais observações, e os pontos sobre as dobras são descartados.",
+      "Dividir um trecho em dois reduz o poder dos testes de cada pedaço.",
+      "O modelo supõe variação percentual constante em cada trecho. Com cobertura perto do teto de 100%, convém conferir os resíduos.",
+      "O AAPC não é a média simples dos APCs e pode ficar perto de zero mesmo com trechos fortes de sinais opostos.",
+      "O padrão supõe erros sem autocorrelação; o manual sugere testar a sensibilidade a esse pressuposto.",
+      "Por padrão, as dobras só podem cair em anos observados."
     ];
-    return "<div class=card><h2>Limitações e pegadinhas</h2><p>Fonte: manual do Joinpoint (NCI) e literatura listada na aba Fontes.</p><ul>" + L.map(function (l) { return "<li>" + l[0] + " " + seal(l[2]) + "</li>"; }).join("") + "</ul></div>";
+    return "<div class=card><h2>Limitações e cuidados</h2><ul>" + L.map(function (l) { return "<li>" + l + "</li>"; }).join("") + "</ul></div>";
   }
   function tabDecidido() {
-    return "<div class=card><h2>O que o projeto já decidiu</h2><ul><li>Usar a Regressão Joinpoint, com o Joinpoint Regression Program do NCI, para a caracterização temporal da cobertura e do abandono (projeto de pesquisa, seção 3.4).</li><li>Estimar APC, AAPC e pontos de inflexão significativos.</li><li>Testar a pandemia de COVID-19 e a mudança de sistemas de informação como quebras estruturais.</li><li>Classificar cada segmento como crescimento, estacionariedade ou declínio conforme sinal e significância do APC.</li></ul></div>" +
-    "<div class=card><h2>O que está pendente</h2><p class=cap>Itens abaixo ainda não foram decididos pelo projeto.</p>" +
-    ["Versão do programa a ser usada (a v6.1.0 era a vigente na consulta de 26/10/2026).", "Método de seleção do número de dobras: permutação (clássico) ou WBIC (padrão desde a v5.0).", "MIN e MAX de joinpoints e restrições de posição (padrão: 2 e 2).", "Número de réplicas de permutação e semente, se a permutação for usada.", "Modelo de erro: variância constante, EP fornecido (proporções) e tratamento de autocorrelação.", "Adequação do log-linear para cobertura perto do teto de 100% (verificar resíduos).", "Como a cobertura acima de 100% entra na série do Joinpoint: o manual não trata disso; o projeto trata cobertura acima de 100% por regra própria (ver método Indicadores).", "Análise de sensibilidade (variar MIN, MAX, semente, réplicas)."].map(function (t) { return "<div class=pending>" + t + "</div>"; }).join("") + "</div>";
+    return "<div class=card><h2>O que o projeto definiu</h2><ul><li>Usar a Regressão Joinpoint, com o Joinpoint Regression Program do National Cancer Institute, para a caracterização temporal da cobertura e da taxa de abandono.</li><li>Estimar APC, AAPC e pontos de inflexão significativos.</li><li>Testar a pandemia de COVID-19 e a mudança dos sistemas de informação como quebras estruturais.</li></ul></div>" +
+      "<div class=card><h2>Escolhas de configuração do método</h2><p class=cap>O manual deixa estas escolhas em aberto; elas afetam o resultado.</p><ul><li>Versão do programa.</li><li>Seleção do número de dobras: permutação ou WBIC.</li><li>Mínimo e máximo de dobras e restrições de posição.</li><li>Número de séries falsas e semente, se a permutação for usada.</li><li>Modelo de erro: variância constante ou erro padrão informado.</li></ul></div>";
   }
-  var FONTES = [
-    ["F1", "Kim, Fay, Feuer, Midthune (2000). Permutation tests for joinpoint regression. Stat Med 19(3):335–351", "LIDO (apenas resumo)"],
-    ["F2", "Clegg et al. (2009). Estimating average annual per cent change in trend analysis. Stat Med 28(29):3670–3682", "LIDO (apenas resumo)"],
-    ["F3", "Kim et al. (2017). Improved confidence interval for average annual percent change. Stat Med 36(19):3059–3074", "LIDO (apenas resumo)"],
-    ["F4", "Kim, Chen, Byrne, Wheeler, Feuer (2022). Twenty years since Joinpoint 1.0. Stat Med 41(16):3102–3130", "LIDO (apenas resumo)"],
-    ["H1–H4", "Joinpoint Help System (NCI): testes de permutação, detalhes, FAQ e p-valores", "LIDO"],
-    ["H5–H7", "Help: número de joinpoints, observações mínimas, grid search", "LIDO"],
-    ["H8–H11", "Help: notas estatísticas, APC, AAPC, IC e quantil empírico", "LIDO"],
-    ["H12–H13", "Help: nível de cada teste na sequência; número de permutações (FAQ)", "LIDO-WebFetch"],
-    ["H14–H18", "Help: seleção de modelo (BIC, BIC3, WBIC), erros, mudanças da v5.0, FAQ, parada antecipada", "LIDO"]
-  ];
   function tabFontes() {
-    return "<div class=card><h2>Fontes e status de verificação</h2><p>URL base: <code>https://surveillance.cancer.gov/help/joinpoint/</code>. Detalhes de cada afirmação (trecho literal, página e status) estão no registro de fontes do projeto.</p><div class='tbl-wrap'><table><tr><th>ID</th><th>Fonte</th><th>Status</th></tr>" + FONTES.map(function (f) { return "<tr><td>" + f[0] + "</td><td>" + f[1] + "</td><td>" + seal(f[2].indexOf("WebFetch") >= 0 ? "LIDO-WebFetch" : "LIDO") + (f[2].indexOf("resumo") >= 0 ? " <small>apenas resumo</small>" : "") + "</td></tr>"; }).join("") + "</table></div>" +
-    "<h3>Verificadas nesta construção (26/10/2026)</h3><div class='tbl-wrap'><table><tr><th>ID</th><th>Fonte</th><th>Status</th></tr><tr><td>V1</td><td>Página do Joinpoint Regression Program, NCI: <code>https://surveillance.cancer.gov/joinpoint/</code> (versão 6.1.0, lançada em 20/07/2026; versão desktop e de linha de comando; a de linha de comando “is for use in a batch mode or called from other software, such as SAS or R”)</td><td>" + seal("LIDO-WebFetch") + "</td></tr><tr><td>V2</td><td>Pacote R segmented, página no índice do CRAN (<code>search.r-project.org/CRAN/packages/segmented/index.html</code>): só o título “Regression Models with Break-Points / Change-Points Estimation” e o início da descrição foram lidos</td><td>" + seal("LIDO-WebFetch") + "</td></tr></table></div>" +
-    "<p>Sem texto integral lido: Kim et al. 2000 (só resumo). Divergências internas do manual (ex.: máximo 7 contra 9 no grid search) foram registradas e não foram harmonizadas.</p></div>"; }
+    var r = (NS.refs && NS.refs.joinpoint) || [];
+    return "<div class=card><h2>Referências</h2><ul class=refs>" + r.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul></div>";
+  }
   function tabRodar() {
-    return "<div class=card><h2>Como rodar de verdade</h2><h3>1. Joinpoint Regression Program (NCI)</h3><p>Software do NCI, citado no projeto (projeto de pesquisa, seção 3.4). A página oficial lista versão com interface gráfica e versão de linha de comando, ambas na 6.1.0 em 26/10/2026 " + seal("LIDO-WebFetch") + ". Segundo a mesma página, a linha de comando pode ser chamada de outros programas, como SAS ou R; não foi encontrado pacote R oficial citado ali.</p><p><b>Entrada:</b> arquivo de dados com campos de x (ano) e y (cobertura em proporção, se for log-linear). O manual indica que a opção de variância constante é escolhida automaticamente se o arquivo tiver só 2 campos " + seal("LIDO") + ". Formato exato do arquivo (separador, extensão): " + seal("NÃO VERIFICADO") + ".</p><p><b>O que configurar</b> (todos pendentes de decisão, ver aba Decidido x pendente): transformação log; MIN e MAX; restrições de posição; método de seleção; nº de permutações e semente; modelo de erro.</p>" +
-    "<h3>2. R: pacote segmented</h3><p>Regressão segmentada em R. Título do pacote confirmado " + seal("LIDO-WebFetch") + ". Nome da função principal, argumentos e versão: " + seal("NÃO VERIFICADO") + ". Se o pacote replica ou não a seleção por permutação do NCI: " + seal("NÃO VERIFICADO") + ". Por isso, não substitui o programa do NCI na descrição metodológica sem checagem.</p><pre># A CONFIRMAR: nomes e argumentos não verificados na documentação; não foi executado.\nlibrary(segmented)\nd  &lt;- data.frame(ano = 2020:2024, cob = c(0.80, 0.85, 0.90, 0.70, 0.50))\nm0 &lt;- lm(log(cob) ~ ano, data = d)\n# m1 &lt;- segmented(m0, seg.Z = ~ano)   # exige confirmação</pre>" +
-    "<h3>3. Conferência independente (testada neste repositório)</h3><p>O repositório inclui <code>tests/check_joinpoint.py</code>, escrito com numpy e scipy, que refaz a busca em grade, o APC, o AAPC, o teste t e a permutação (com a mesma semente) e compara com o motor JavaScript. Resultado da última execução: 74 comparações, 0 divergências.</p><pre>node tests/dump_js.js &gt; js.json\npython3 tests/check_joinpoint.py js.json</pre></div>"; }
-
+    return "<div class=card><h2>Como rodar de verdade</h2><h3>Joinpoint Regression Program (NCI)</h3><p>Programa gratuito do National Cancer Institute, citado no projeto. Há versão com interface gráfica e versão de linha de comando (página oficial, consulta em 26/10/2026).</p>" +
+      "<h3>R: pacote segmented</h3><p>Pacote do R para regressão com pontos de quebra. Não substitui o programa do NCI na descrição metodológica sem conferir se o método de seleção é o mesmo.</p>" +
+      "<h3>Conferência neste repositório</h3><p>O arquivo <code>tests/check_joinpoint.py</code> refaz em Python (numpy e scipy) a busca em grade, o APC, o AAPC, o teste t e a simulação com a mesma semente, e compara com o motor JavaScript: 74 comparações, 0 divergências.</p><pre>node tests/dump_js.js &gt; js.json\npython3 tests/check_joinpoint.py js.json</pre></div>";
+  }
   function tabFaq() { return "<div class=card>" + STEPS.map(function (x) { return "<h3>" + x.q + "</h3><p>" + x.a + "</p>"; }).join("") + "</div>"; }
 
   NS.methods.joinpoint = {
     id: "joinpoint", n: 2, nome: "Regressão Joinpoint", ready: true, steps: STEPS.length, count: function (st) { return st.simple === false ? STEPS.length : SIMPLE.length; },
-    tabs: [["contexto", "Contexto"], ["dados", "Dados"], ["passos", "Passo a passo"], ["resultado", "Resultado"], ["limites", "Limitações"], ["decisao", "Decidido x pendente"], ["fontes", "Fontes"], ["rodar", "Como rodar de verdade"], ["faq", "Perguntas frequentes"]],
+    tabs: [["contexto", "Contexto"], ["dados", "Dados"], ["passos", "Passo a passo"], ["resultado", "Resultado"], ["limites", "Limitações"], ["decisao", "Decisões do projeto"], ["fontes", "Referências"], ["rodar", "Como rodar de verdade"], ["faq", "Perguntas frequentes"]],
     render: function (tab, root, app, state) {
       state.ds = state.ds || "5";
       if (tab === "passos") { renderPassos(root, app, state); return; }
